@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaxCare – Vaccine Booking Platform</title>
+  <meta name="description" content="Book vaccines at certified hospitals near you. VaxCare makes vaccination easy, fast, and reliable."/>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+
+<!-- ======== LANDING PAGE ======== -->
+<div class="landing">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">VaxCare</div>
+    <div class="nav-links">
+      <button class="btn btn-light btn-sm" onclick="openLoginModal()">Login</button>
+      <button class="btn btn-blue btn-sm" onclick="openSignupModal()">Sign Up</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-tag">
+      <span class="material-symbols-outlined" style="font-size:0.9rem;">verified</span>
+      Trusted by 500+ certified hospitals
+    </div>
+    <h1>Your Health, Our <span>Priority</span></h1>
+    <p>Find certified vaccination centres near you, book appointments instantly, and keep your immunisation records safe — all in one place.</p>
+    <div class="hero-cta">
+      <button class="btn btn-blue" onclick="openSignupModal()">Get Started Free</button>
+      <button class="btn btn-light" onclick="openLoginModal()">Login to Account</button>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="feature">
+      <div class="feat-icon">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">local_hospital</span>
+      </div>
+      <h3>Find Nearby Hospitals</h3>
+      <p>Search certified vaccination centres by city or location and compare available services.</p>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">calendar_today</span>
+      </div>
+      <h3>Book Appointments</h3>
+      <p>Choose your preferred time slot and confirm your vaccination appointment in seconds.</p>
+    </div>
+    <div class="feature">
+      <div class="feat-icon">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">star</span>
+      </div>
+      <h3>Rate Your Experience</h3>
+      <p>Share feedback after your visit to help others find the best vaccination centres.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-foot">
+    <p><strong>VaxCare</strong> &nbsp;·&nbsp; <a href="#">Privacy Policy</a> &nbsp;·&nbsp; <a href="#">Terms of Service</a> &nbsp;·&nbsp; <a href="#">Support</a></p>
+    <p style="margin-top:0.5rem;">© 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
+  </footer>
+
+</div>
+
+<!-- ======== AUTH MODAL ======== -->
+<div id="loginModal" class="overlay hidden">
+  <div class="modal">
+    <button class="close-btn" onclick="closeAuthModal()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <!-- Login / Signup Tab bar -->
+    <div class="tab-row">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Login</div>
+      <div class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" onsubmit="handleAuthSubmit(event,'login')">
+      <div class="fgroup">
+        <label>I am a</label>
+        <div class="roles">
+          <label class="role">
+            <input type="radio" name="loginRole" value="patient" checked/>
+            <div class="role-label">
+              <span class="material-symbols-outlined">person</span>
+              Patient
+            </div>
+          </label>
+          <label class="role">
+            <input type="radio" name="loginRole" value="hospital"/>
+            <div class="role-label">
+              <span class="material-symbols-outlined">local_hospital</span>
+              Hospital
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Email address</label>
+        <div class="finput">
+          <span class="ficon material-symbols-outlined">mail</span>
+          <input class="input" type="email" name="email" placeholder="name@clinic.com" required/>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Password</label>
+        <div class="finput">
+          <span class="ficon material-symbols-outlined">lock</span>
+          <input class="input" type="password" name="password" placeholder="••••••••" required/>
+        </div>
+      </div>
+
+      <div id="loginError" class="alert alert-error hidden" style="margin-bottom:1rem;"></div>
+
+      <button class="btn btn-blue btn-full" type="submit">Login to VaxCare</button>
+      <p style="text-align:center;margin-top:1rem;font-size:0.875rem;color:#404752;">
+        Don't have an account?
+        <button type="button" onclick="switchTab('signup')" style="color:#0061a4;font-weight:700;margin-left:0.25rem;">Sign Up</button>
+      </p>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" class="hidden" onsubmit="handleAuthSubmit(event,'signup')">
+
+      <!-- Step 1: Role -->
+      <div id="signupStep1">
+        <div class="fgroup">
+          <label>I am registering as</label>
+          <div class="roles">
+            <label class="role">
+              <input type="radio" name="signupRole" value="patient" checked/>
+              <div class="role-label">
+                <span class="material-symbols-outlined">person</span>
+                Patient
+              </div>
+            </label>
+            <label class="role">
+              <input type="radio" name="signupRole" value="hospital"/>
+              <div class="role-label">
+                <span class="material-symbols-outlined">local_hospital</span>
+                Hospital
+              </div>
+            </label>
+          </div>
+        </div>
+        <button type="button" class="btn btn-blue btn-full" onclick="nextSignupStep()">Continue</button>
+        <p style="text-align:center;margin-top:1rem;font-size:0.875rem;color:#404752;">
+          Already have an account?
+          <button type="button" onclick="switchTab('login')" style="color:#0061a4;font-weight:700;margin-left:0.25rem;">Login</button>
+        </p>
+      </div>
+
+      <!-- Step 2: Details -->
+      <div id="signupStep2" class="hidden">
+        <button type="button" class="back-btn" onclick="prevSignupStep()">
+          <span class="material-symbols-outlined" style="font-size:1rem;">arrow_back</span> Back
+        </button>
+
+        <div class="fgroup">
+          <label id="signup-name-label">Full Name</label>
+          <div class="finput">
+            <span class="ficon material-symbols-outlined">person</span>
+            <input id="signup-name" class="input" type="text" placeholder="John Doe" required/>
+          </div>
+        </div>
+
+        <!-- Patient-only fields -->
+        <div id="patient-extra-fields">
+          <div class="fgroup" style="display: flex; gap: 1rem;">
+            <div style="flex:1;">
+              <label>Age</label>
+              <div class="finput">
+                <input id="signup-age" class="input" type="number" placeholder="25" min="1" max="120" style="padding-left:1rem;"/>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <label>Gender</label>
+              <div class="finput">
+                <select id="signup-gender" class="input" style="padding-left:1rem; appearance:none; width: 100%;">
+                  <option value="" disabled selected>Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                <span class="ficon material-symbols-outlined" style="pointer-events: none; right: 1rem; left: unset;">expand_more</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fgroup">
+          <label>Email address</label>
+          <div class="finput">
+            <span class="ficon material-symbols-outlined">mail</span>
+            <input class="input" type="email" name="email" placeholder="name@clinic.com" required/>
+          </div>
+        </div>
+
+        <!-- Hospital-only fields -->
+        <div id="hospital-extra-fields" style="display:none;">
+          <div class="fgroup">
+            <label>Hospital Location</label>
+            <div class="finput">
+              <span class="ficon material-symbols-outlined">location_on</span>
+              <input id="signup-location" class="input" type="text" placeholder="e.g. Chennai, Tamil Nadu"/>
+            </div>
+          </div>
+          <div class="fgroup">
+            <label>Government ID</label>
+            <div class="finput">
+              <span class="ficon material-symbols-outlined">badge</span>
+              <input id="signup-govt-id" class="input" type="text" placeholder="e.g. AUTH-8829-NY"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="fgroup">
+          <label>Create Password</label>
+          <div class="finput">
+            <span class="ficon material-symbols-outlined">lock</span>
+            <input class="input" type="password" name="password" placeholder="••••••••" required/>
+          </div>
+        </div>
+
+        <div id="signupError" class="alert alert-error hidden" style="margin-bottom:1rem;"></div>
+
+        <button class="btn btn-blue btn-full" type="submit">Create Account</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    redirectIfLoggedIn();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "vaxcare",
+  "version": "1.0.0",
+  "description": "VaxCare – Vaccine Booking Platform",
+  "main": "backend/server.js",
+  "scripts": {
+    "start":     "node backend/server.js",
+    "dev":       "node backend/server.js",
+    "seed":      "node database/scripts/seed.js",
+    "structure": "node scripts/show-structure.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.4.1"
+  }
+}
