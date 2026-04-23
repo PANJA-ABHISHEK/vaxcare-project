@@ -7,6 +7,7 @@ const vaccineSchema = new mongoose.Schema({
   stock:        { type: Number, required: true },
   hospitalName: { type: String, required: true },
   location:     { type: String, required: false },
+  cost:         { type: Number, required: true, min: 0, default: 0 },
   rating:       { type: Number, default: 0 }
 });
 

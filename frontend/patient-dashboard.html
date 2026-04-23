@@ -266,6 +266,12 @@
                         </div>` : ''}
                     </div>
 
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0 0.25rem;">
+                        <span class="material-symbols-outlined" style="font-size:1.1rem;color:#065f46;">payments</span>
+                        <span style="font-family:'Manrope',sans-serif;font-size:1.25rem;font-weight:800;color:#065f46;">₹${(v.cost || 0).toLocaleString('en-IN')}</span>
+                        ${v.cost === 0 || !v.cost ? '<span style="font-size:0.72rem;color:#64748b;font-weight:600;">FREE</span>' : ''}
+                    </div>
+
                     <hr class="vcard-line"/>
 
                     <div class="doctor-row">
@@ -282,7 +288,7 @@
                         <span class="stock-badge ${stockClass}">${stockLabel}</span>
                         <button class="btn btn-blue"
                             style="border-radius:9999px;padding:0.5rem 1.4rem;font-size:0.875rem;"
-                            onclick="bookVaccine('${v._id}', '${v.name.replace(/'/g,"\\'")}', '${(v.hospitalName||'').replace(/'/g,"\\'")}', '${(v.doctorName||'Assigned Staff').replace(/'/g,"\\'")}')"
+                            onclick="bookVaccine('${v._id}', '${v.name.replace(/'/g,"\\'")}', '${(v.hospitalName||'').replace(/'/g,"\\'")}', '${(v.doctorName||'Assigned Staff').replace(/'/g,"\\'")}', ${v.cost || 0})"
                             ${stock === 0 ? 'disabled style="opacity:.5;cursor:not-allowed;border-radius:9999px"' : ''}>
                             Book Now
                         </button>
@@ -299,7 +305,7 @@
         let bookingHospitalName = null;
         let selectedTime        = null;
 
-        function bookVaccine(vaccineId, vaccineName, hospitalName, doctorName) {
+        function bookVaccine(vaccineId, vaccineName, hospitalName, doctorName, cost) {
             const user = JSON.parse(localStorage.getItem('vaxUser'));
             if (!user) { window.location.href = 'index.html'; return; }
 
@@ -310,6 +316,7 @@
             document.getElementById('bk-name').innerText     = vaccineName;
             document.getElementById('bk-hospital').innerText = hospitalName || 'Unknown Hospital';
             document.getElementById('bk-doctor').innerText   = doctorName || 'Assigned Staff';
+            document.getElementById('bk-cost').innerText     = (cost && cost > 0) ? '₹' + Number(cost).toLocaleString('en-IN') : 'FREE';
             document.getElementById('bkDate').value          = '';
             document.getElementById('bk-error').innerText    = '';
             document.getElementById('slot-container').innerHTML =
@@ -522,6 +529,10 @@
                 <div class="bk-row">
                     <div class="bk-icon"><span class="material-symbols-outlined">person</span></div>
                     <span id="bk-doctor">Doctor Name</span>
+                </div>
+                <div class="bk-row">
+                    <div class="bk-icon"><span class="material-symbols-outlined">payments</span></div>
+                    <span id="bk-cost" style="font-weight:800;color:#065f46;">₹0</span>
                 </div>
             </div>
 

@@ -38,14 +38,14 @@ const getVaccines = async (req, res) => {
 // POST /vaccines
 const addVaccine = async (req, res) => {
   try {
-    let { name, doctorName, experience, stock, hospitalName, location, rating } = req.body;
+    let { name, doctorName, experience, stock, hospitalName, location, rating, cost } = req.body;
 
     if (!location || location.trim() === '' || location === 'Not specified') {
       const hospital = await User.findOne({ name: hospitalName, role: 'hospital' });
       if (hospital && hospital.location) location = hospital.location;
     }
 
-    const newVaccine = new Vaccine({ name, doctorName, experience, stock, hospitalName, location, rating });
+    const newVaccine = new Vaccine({ name, doctorName, experience, stock, hospitalName, location, rating, cost: cost || 0 });
     await newVaccine.save();
     res.status(201).json({ message: 'Vaccine listing added successfully', vaccine: newVaccine });
   } catch (error) {
