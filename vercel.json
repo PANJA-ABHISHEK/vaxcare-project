@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "outputDirectory": "frontend",
+  "rewrites": [
+    { "source": "/login", "destination": "https://vaxcare-project.onrender.com/login" },
+    { "source": "/signup", "destination": "https://vaxcare-project.onrender.com/signup" },
+    { "source": "/vaccines(.*)", "destination": "https://vaxcare-project.onrender.com/vaccines$1" },
+    { "source": "/bookings(.*)", "destination": "https://vaxcare-project.onrender.com/bookings$1" },
+    { "source": "/hospitals(.*)", "destination": "https://vaxcare-project.onrender.com/hospitals$1" },
+    { "source": "/profile(.*)", "destination": "https://vaxcare-project.onrender.com/profile$1" },
+    { "source": "/notifications(.*)", "destination": "https://vaxcare-project.onrender.com/notifications$1" },
+    { "source": "/notification-reminders(.*)", "destination": "https://vaxcare-project.onrender.com/notification-reminders$1" }
+  ]
+}
