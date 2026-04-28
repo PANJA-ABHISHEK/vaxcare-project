@@ -233,7 +233,7 @@
                     </div>`;
                 } else if (status === 'completed') {
                     const ratingHtml = apt.rating
-                        ? `<span style="color:#ca8a04;font-weight:700;">Rated ${'â˜…'.repeat(apt.rating)}</span>`
+                        ? `<span style="color:#ca8a04;font-weight:700;">Rated ${'★'.repeat(apt.rating)}</span>`
                         : `<button onclick="openRatingModal('${apt._id}','${vaxName}')" class="btn btn-light btn-sm">Rate</button>`;
 
                     const totalD = apt.totalDoses > 1 ? apt.totalDoses : (apt.vaccineId?.dosesRequired || 1);
