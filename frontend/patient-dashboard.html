@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VaxCare ”“ Patient Dashboard</title>
+    <title>VaxCare — Patient Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css" />
     <link rel="stylesheet" href="/css/notifications.css" />
     <script src="/js/interceptor.js"></script> <!-- auto-injects JWT token -->
@@ -681,7 +681,7 @@
                 return;
             }
 
-            box.innerHTML = '<p style="color:#64748b;font-size:.85rem;grid-column:1/-1;">Loading slots”¦</p>';
+            box.innerHTML = '<p style="color:#64748b;font-size:.85rem;grid-column:1/-1;">Loading slots...</p>';
 
             const dayKey = DAY_KEYS[new Date(date + 'T00:00:00').getDay()];
 
@@ -706,7 +706,7 @@
                 return;
             }
             if (timings[dayKey].closed) {
-                box.innerHTML = '<p style="color:#ba1a1a;font-size:.85rem;grid-column:1/-1;">ðŸš« Hospital is closed on ' + dayKey + '.</p>';
+                box.innerHTML = '<p style="color:#ba1a1a;font-size:.85rem;grid-column:1/-1;">🚫 Hospital is closed on ' + dayKey + '.</p>';
                 return;
             }
 

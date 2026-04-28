@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VaxCare ”“ My Appointments</title>
+  <title>VaxCare — My Appointments</title>
   <link rel="stylesheet" href="/css/styles.css"/>
   <!-- interceptor.js: wraps fetch() to auto-inject JWT token on every API call -->
   <script src="/js/interceptor.js"></script>
@@ -14,7 +14,7 @@
 
 <div class="app">
 
-  <!-- Sidebar ”“ Navigation links (Dashboard, My Appointments) + Logout button -->
+  <!-- Sidebar — Navigation links (Dashboard, My Appointments) + Logout button -->
   <aside class="sidebar">
     <div class="brand">
       <h1>VaxCare</h1>
@@ -45,7 +45,7 @@
   <!-- Main Area -->
   <div class="main">
 
-    <!-- Top Header ”“ page title + user name/avatar (populated by syncTopNav()) -->
+    <!-- Top Header — page title + user name/avatar (populated by syncTopNav()) -->
     <header class="header">
       <h2 class="header-title">My Appointments</h2>
       <div class="header-right">
@@ -66,7 +66,7 @@
     <!-- Page Content -->
     <main class="content">
 
-      <!-- Tab Switcher ”“ toggles between Upcoming and Completed appointment lists.
+      <!-- Tab Switcher — toggles between Upcoming and Completed appointment lists.
            showTab('upcoming') / showTab('completed') swaps visibility + active styles. -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #bfc7d4;">
         <h3 style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;">My Appointments</h3>
@@ -82,12 +82,12 @@
         </div>
       </div>
 
-      <!-- Upcoming appointments ”“ shows Pending & Accepted bookings with Cancel button -->
+      <!-- Upcoming appointments — shows Pending & Accepted bookings with Cancel button -->
       <div id="upcomingSection">
         <div id="upcomingContainer" class="appt-list"></div>
       </div>
 
-      <!-- Completed appointments ”“ shows finished vaccinations with Rate button -->
+      <!-- Completed appointments — shows finished vaccinations with Rate button -->
       <div id="completedSection" style="display:none;">
         <div id="completedContainer" class="appt-list"></div>
       </div>
@@ -108,7 +108,7 @@
   </div>
 </div>
 
-<!-- Rating Popup ”“ 5-star interactive modal.
+<!-- Rating Popup — 5-star interactive modal.
      Opens via openRatingModal(bookingId, vaccineName).
      Stars highlight on hover, lock on click, submit via PUT /bookings/:id -->
 <div id="ratingModal" class="popup-bg hidden">
@@ -148,7 +148,7 @@
 
 
 
-    // showTab() ”“ switches between 'upcoming' and 'completed' views,
+    // showTab() — switches between 'upcoming' and 'completed' views,
     // updating button styles to indicate which tab is active
     function showTab(tab) {
         const upcoming  = document.getElementById('upcomingSection');
@@ -181,7 +181,7 @@
         }
     }
 
-    // loadAppointments() ”“ fetches all bookings for the current user from GET /bookings,
+    // loadAppointments() — fetches all bookings for the current user from GET /bookings,
     // then splits them into Upcoming (Pending/Accepted) and Completed sections
     async function loadAppointments() {
         const userStr = localStorage.getItem('vaxUser');
@@ -273,7 +273,7 @@
         } catch (e) { console.error(e); }
     }
 
-    // cancelAppointment() ”“ sends PUT /bookings/:id with status='Cancelled'.
+    // cancelAppointment() — sends PUT /bookings/:id with status='Cancelled'.
     // The backend also restores +1 vaccine stock when a booking is cancelled.
     async function cancelAppointment(id) {
         try {
@@ -288,10 +288,10 @@
 
     // ── Rating Popup State ──
     // currentRatingId: the booking ID being rated
-    // currentSelectedRating: the star value (1”“5) the user clicked
+    // currentSelectedRating: the star value (1—5) the user clicked
     let currentRatingId = null, currentSelectedRating = 0;
 
-    // openRatingModal() ”“ opens the rating popup for a specific completed booking
+    // openRatingModal() — opens the rating popup for a specific completed booking
     function openRatingModal(id, name) {
         currentRatingId = id;
         currentSelectedRating = 0;
@@ -305,7 +305,7 @@
         document.getElementById('ratingModal').classList.add('hidden');
     }
 
-    // updateStars() ”“ fills star icons up to 'val' (used for hover preview + click lock)
+    // updateStars() — fills star icons up to 'val' (used for hover preview + click lock)
     function updateStars(val) {
         document.querySelectorAll('.star-btn').forEach(btn => {
             const v = parseInt(btn.dataset.val);
@@ -314,7 +314,7 @@
         });
     }
 
-    // submitRating() ”“ sends the selected rating to PUT /bookings/:id { rating: N }.
+    // submitRating() — sends the selected rating to PUT /bookings/:id { rating: N }.
     // The backend updates both booking.rating and vaccine.rating (running average).
     async function submitRating() {
         if (!currentSelectedRating) { alert('Please select a rating.'); return; }
@@ -329,7 +329,7 @@
         } catch (e) { console.error(e); }
     }
 
-    // DOMContentLoaded ”“ entry point: verify auth, populate UI, and load data
+    // DOMContentLoaded — entry point: verify auth, populate UI, and load data
     document.addEventListener('DOMContentLoaded', async () => {
         if (!await checkAuth('patient')) return;
         syncTopNav();

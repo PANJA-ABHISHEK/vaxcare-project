@@ -123,7 +123,7 @@ const updateBooking = async (req, res) => {
             userId: booking.userId,
             bookingId: booking._id,
             title: 'Booking Accepted & Reminder',
-            message: `ðŸ“… Reminder: Your vaccination appointment for ${vaccine.name}${doseText} is scheduled for ${booking.date}. Please arrive on time.`,
+            message: `📅 Reminder: Your vaccination appointment for ${vaccine.name}${doseText} is scheduled for ${booking.date}. Please arrive on time.`,
             appointmentDate: booking.date,
             appointmentTime: booking.time
           });
