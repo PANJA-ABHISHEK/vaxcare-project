@@ -1,18 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VaxCare – My Appointments</title>
-  <link rel="stylesheet" href="/styles.css"/>
+  <title>VaxCare ”“ My Appointments</title>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <!-- interceptor.js: wraps fetch() to auto-inject JWT token on every API call -->
   <script src="/js/interceptor.js"></script>
+  <!-- auth.js: provides checkAuth(), syncTopNav(), logoutUser() helpers -->
   <script src="/js/auth.js"></script>
 </head>
 <body>
 
 <div class="app">
 
-  <!-- Sidebar -->
+  <!-- Sidebar ”“ Navigation links (Dashboard, My Appointments) + Logout button -->
   <aside class="sidebar">
     <div class="brand">
       <h1>VaxCare</h1>
@@ -27,6 +29,10 @@
         <span class="material-symbols-outlined">calendar_today</span>
         <span>My Appointments</span>
       </a>
+      <a class="navlink" href="/patient-profile.html">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        <span>My Profile</span>
+      </a>
     </nav>
     <div class="sidefoot">
       <button class="logout" onclick="logoutUser()">
@@ -39,15 +45,19 @@
   <!-- Main Area -->
   <div class="main">
 
-    <!-- Top Header -->
+    <!-- Top Header ”“ page title + user name/avatar (populated by syncTopNav()) -->
     <header class="header">
       <h2 class="header-title">My Appointments</h2>
       <div class="header-right">
         <div class="header-user">
           <span class="header-name" id="top-nav-name">Welcome back</span>
-          <div class="avatar">
-            <img id="top-nav-avatar" alt="User Avatar"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXZB4fdt3a87HlLIMyW4KNZRyDI9EMnPbsSnLMFPJ7nKLbeG6IEHtE0xb4qy9CZvNAUn8gpPaktMh__XGlghBmlbiPO6qG_HM99zd0S18k2rOADsT7Y8vf-fhokz1JHbqMfZM80qaOUxBmZY4Javr90TJDFwn3lT6a9ti6BL70iU07k9gSxhIbpKG2laHpNRhDPIlGbVpkNVZpSQUqV8XUvzsp0vjmSYN8ES5CUNrBEMajRgDux2WHBxqLeKQgJfRjPLyPm6OFiMfW"/>
+          <div class="avatar"
+               style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                      color:#fff;display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+            <img id="header-avatar-img" src="" alt=""
+                 style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+            <span id="header-avatar-init"></span>
           </div>
         </div>
       </div>
@@ -56,7 +66,8 @@
     <!-- Page Content -->
     <main class="content">
 
-      <!-- Tab Switcher -->
+      <!-- Tab Switcher ”“ toggles between Upcoming and Completed appointment lists.
+           showTab('upcoming') / showTab('completed') swaps visibility + active styles. -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #bfc7d4;">
         <h3 style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;">My Appointments</h3>
         <div style="display:flex;gap:0.25rem;padding:0.25rem;background:#e9f5ff;border-radius:9999px;">
@@ -71,12 +82,12 @@
         </div>
       </div>
 
-      <!-- Upcoming -->
+      <!-- Upcoming appointments ”“ shows Pending & Accepted bookings with Cancel button -->
       <div id="upcomingSection">
         <div id="upcomingContainer" class="appt-list"></div>
       </div>
 
-      <!-- Completed -->
+      <!-- Completed appointments ”“ shows finished vaccinations with Rate button -->
       <div id="completedSection" style="display:none;">
         <div id="completedContainer" class="appt-list"></div>
       </div>
@@ -97,7 +108,9 @@
   </div>
 </div>
 
-<!-- Rating Popup -->
+<!-- Rating Popup ”“ 5-star interactive modal.
+     Opens via openRatingModal(bookingId, vaccineName).
+     Stars highlight on hover, lock on click, submit via PUT /bookings/:id -->
 <div id="ratingModal" class="popup-bg hidden">
   <div class="popup" style="text-align:center;">
     <button class="popup-close" onclick="closeRatingModal()">
@@ -128,12 +141,15 @@
 </div>
 
 <script>
+    // Month abbreviations for formatting dates in appointment cards
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 
 
 
 
+    // showTab() ”“ switches between 'upcoming' and 'completed' views,
+    // updating button styles to indicate which tab is active
     function showTab(tab) {
         const upcoming  = document.getElementById('upcomingSection');
         const completed = document.getElementById('completedSection');
@@ -165,6 +181,8 @@
         }
     }
 
+    // loadAppointments() ”“ fetches all bookings for the current user from GET /bookings,
+    // then splits them into Upcoming (Pending/Accepted) and Completed sections
     async function loadAppointments() {
         const userStr = localStorage.getItem('vaxUser');
         if (!userStr) { window.location.href = '/index.html'; return; }
@@ -192,6 +210,12 @@
                         ? 'background:#d1fae5;color:#065f46;'
                         : 'background:#fef9c3;color:#854d0e;';
 
+                    const totalD = apt.totalDoses > 1 ? apt.totalDoses : (apt.vaccineId?.dosesRequired || 1);
+                    const doseN  = apt.doseNumber || 1;
+                    const doseBadge = totalD > 1 
+                        ? `<span style="display:inline-block;padding:.1rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;margin-left:0.5rem;vertical-align:middle;">Dose ${doseN} of ${totalD}</span>`
+                        : '';
+
                     upcomingEl.innerHTML += `
                     <div class="appt">
                         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f1f5f9;border-radius:1rem;padding:1rem 1.25rem;min-width:80px;text-align:center;">
@@ -200,7 +224,7 @@
                         </div>
                         <div class="appt-info">
                             <span style="display:inline-block;padding:.2rem .7rem;border-radius:9999px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;${badgeCss}width:fit-content;">${apt.status}</span>
-                            <h4>${vaxName}</h4>
+                            <h4 style="display:flex;align-items:center;">${vaxName} ${doseBadge}</h4>
                             <p>${locName} · ${apt.time || 'TBD'}</p>
                         </div>
                         <div class="appt-acts">
@@ -209,14 +233,20 @@
                     </div>`;
                 } else if (status === 'completed') {
                     const ratingHtml = apt.rating
-                        ? `<span style="color:#ca8a04;font-weight:700;">Rated ${'★'.repeat(apt.rating)}</span>`
+                        ? `<span style="color:#ca8a04;font-weight:700;">Rated ${'â˜…'.repeat(apt.rating)}</span>`
                         : `<button onclick="openRatingModal('${apt._id}','${vaxName}')" class="btn btn-light btn-sm">Rate</button>`;
+
+                    const totalD = apt.totalDoses > 1 ? apt.totalDoses : (apt.vaccineId?.dosesRequired || 1);
+                    const doseN  = apt.doseNumber || 1;
+                    const doseBadge = totalD > 1 
+                        ? `<span style="display:inline-block;padding:.1rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#f3f4f6;color:#4b5563;margin-left:0.5rem;vertical-align:middle;">Dose ${doseN} of ${totalD}</span>`
+                        : '';
 
                     completedEl.innerHTML += `
                     <div class="appt">
                         <span class="material-symbols-outlined" style="font-size:2rem;color:#bfc7d4;flex-shrink:0;" title="Completed">check_circle</span>
                         <div class="appt-info">
-                            <h4>${vaxName}</h4>
+                            <h4 style="display:flex;align-items:center;">${vaxName} ${doseBadge}</h4>
                             <p>Completed ${mName} ${dNum} · ${locName}</p>
                         </div>
                         <div class="appt-acts">${ratingHtml}</div>
@@ -243,6 +273,8 @@
         } catch (e) { console.error(e); }
     }
 
+    // cancelAppointment() ”“ sends PUT /bookings/:id with status='Cancelled'.
+    // The backend also restores +1 vaccine stock when a booking is cancelled.
     async function cancelAppointment(id) {
         try {
             await fetch('/bookings/' + id, {
@@ -254,9 +286,12 @@
         } catch (e) { console.error(e); }
     }
 
-    // Rating Popup
+    // ── Rating Popup State ──
+    // currentRatingId: the booking ID being rated
+    // currentSelectedRating: the star value (1”“5) the user clicked
     let currentRatingId = null, currentSelectedRating = 0;
 
+    // openRatingModal() ”“ opens the rating popup for a specific completed booking
     function openRatingModal(id, name) {
         currentRatingId = id;
         currentSelectedRating = 0;
@@ -270,6 +305,7 @@
         document.getElementById('ratingModal').classList.add('hidden');
     }
 
+    // updateStars() ”“ fills star icons up to 'val' (used for hover preview + click lock)
     function updateStars(val) {
         document.querySelectorAll('.star-btn').forEach(btn => {
             const v = parseInt(btn.dataset.val);
@@ -278,6 +314,8 @@
         });
     }
 
+    // submitRating() ”“ sends the selected rating to PUT /bookings/:id { rating: N }.
+    // The backend updates both booking.rating and vaccine.rating (running average).
     async function submitRating() {
         if (!currentSelectedRating) { alert('Please select a rating.'); return; }
         try {
@@ -291,6 +329,7 @@
         } catch (e) { console.error(e); }
     }
 
+    // DOMContentLoaded ”“ entry point: verify auth, populate UI, and load data
     document.addEventListener('DOMContentLoaded', async () => {
         if (!await checkAuth('patient')) return;
         syncTopNav();

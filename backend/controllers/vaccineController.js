@@ -1,6 +1,6 @@
-const Vaccine = require('../../database/models/Vaccine');
-const Booking = require('../../database/models/Booking');
-const User    = require('../../database/models/User');
+﻿const Vaccine = require('../models/Vaccine');
+const Booking = require('../models/Booking');
+const User    = require('../models/User');
 
 // GET /vaccines
 const getVaccines = async (req, res) => {
@@ -38,14 +38,19 @@ const getVaccines = async (req, res) => {
 // POST /vaccines
 const addVaccine = async (req, res) => {
   try {
-    let { name, doctorName, experience, stock, hospitalName, location, rating, cost } = req.body;
+    let { name, doctorName, experience, stock, hospitalName, location, rating, cost, dosesRequired, daysBetweenDoses } = req.body;
 
     if (!location || location.trim() === '' || location === 'Not specified') {
       const hospital = await User.findOne({ name: hospitalName, role: 'hospital' });
       if (hospital && hospital.location) location = hospital.location;
     }
 
-    const newVaccine = new Vaccine({ name, doctorName, experience, stock, hospitalName, location, rating, cost: cost || 0 });
+    const newVaccine = new Vaccine({ 
+      name, doctorName, experience, stock, hospitalName, location, rating, 
+      cost: cost || 0,
+      dosesRequired: dosesRequired || 1,
+      daysBetweenDoses: daysBetweenDoses || 0
+    });
     await newVaccine.save();
     res.status(201).json({ message: 'Vaccine listing added successfully', vaccine: newVaccine });
   } catch (error) {

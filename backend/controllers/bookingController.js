@@ -1,5 +1,6 @@
-const Booking = require('../../database/models/Booking');
-const Vaccine  = require('../../database/models/Vaccine');
+﻿const Booking = require('../models/Booking');
+const Vaccine = require('../models/Vaccine');
+const Notification = require('../models/Notification');
 
 // GET /bookings
 const getBookings = async (req, res) => {
@@ -40,12 +41,37 @@ const createBooking = async (req, res) => {
     if (!vaccine) return res.status(404).json({ message: 'Vaccine not found' });
     if (vaccine.stock <= 0) return res.status(400).json({ message: 'Vaccine out of stock' });
 
-    const newBooking = new Booking({ userId, vaccineId, date, time, status });
+    // Calculate Dose Number
+    const previousBookings = await Booking.find({ 
+      userId, 
+      vaccineId, 
+      status: { $nin: ['Cancelled', 'Rejected'] } 
+    });
+    const doseNumber = previousBookings.length + 1;
+    const totalDoses = vaccine.dosesRequired || 1;
+
+    if (doseNumber > totalDoses) {
+      return res.status(400).json({ message: `You have already completed the required doses (${totalDoses}) for this vaccine.` });
+    }
+
+    const newBooking = new Booking({ userId, vaccineId, date, time, status, doseNumber, totalDoses });
     await newBooking.save();
 
     // Decrement stock
     vaccine.stock -= 1;
     await vaccine.save();
+
+    // Create notification for the patient
+    const doseText = totalDoses > 1 ? ` (Dose ${doseNumber} of ${totalDoses})` : '';
+    const notification = new Notification({
+      userId,
+      bookingId: newBooking._id,
+      title: 'Booking Submitted',
+      message: `Your booking request for ${vaccine.name}${doseText} on ${date} has been submitted and is pending hospital approval.`,
+      appointmentDate: date,
+      appointmentTime: time
+    });
+    await notification.save();
 
     res.status(201).json({ message: 'Booking created successfully', booking: newBooking });
   } catch (error) {
@@ -60,6 +86,19 @@ const updateBooking = async (req, res) => {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
+    // Authorization: ensure the requester owns this booking or is a hospital admin
+    const isOwner    = booking.userId.toString() === req.user.userId;
+    const isHospital = req.user.role === 'hospital';
+
+    if (!isOwner && !isHospital) {
+      return res.status(403).json({ message: 'Access denied. You can only modify your own bookings.' });
+    }
+
+    // Patients can only cancel their own bookings (not accept/reject/complete)
+    if (isOwner && !isHospital && status && status !== 'Cancelled') {
+      return res.status(403).json({ message: 'Patients can only cancel their bookings.' });
+    }
+
     const prevStatus = booking.status;
 
     if (status) {
@@ -70,6 +109,39 @@ const updateBooking = async (req, res) => {
         if (vaccine) {
           vaccine.stock += 1;
           await vaccine.save();
+        }
+        // Sweep and delete any pending notifications/reminders linked to this booking
+        await Notification.deleteMany({ bookingId: booking._id });
+      }
+
+      // If accepted, send the confirmation/reminders
+      if (status === 'Accepted' && prevStatus === 'Pending') {
+        const vaccine = await Vaccine.findById(booking.vaccineId);
+        if (vaccine) {
+          const doseText = booking.totalDoses > 1 ? ` (Dose ${booking.doseNumber || 1} of ${booking.totalDoses})` : '';
+          const notification = new Notification({
+            userId: booking.userId,
+            bookingId: booking._id,
+            title: 'Booking Accepted & Reminder',
+            message: `ðŸ“… Reminder: Your vaccination appointment for ${vaccine.name}${doseText} is scheduled for ${booking.date}. Please arrive on time.`,
+            appointmentDate: booking.date,
+            appointmentTime: booking.time
+          });
+          await notification.save();
+
+          // If there is a next dose, create a separate follow-up reminder notification
+          if ((booking.doseNumber || 1) < booking.totalDoses && vaccine.daysBetweenDoses > 0) {
+            const nextDoseDate = new Date(booking.date);
+            nextDoseDate.setDate(nextDoseDate.getDate() + vaccine.daysBetweenDoses);
+            const nextDoseStr = nextDoseDate.toISOString().split('T')[0];
+            
+            const followUpNotif = new Notification({
+              userId: booking.userId,
+              title: 'Next Dose Reminder',
+              message: `Reminder: Your next dose (Dose ${(booking.doseNumber || 1) + 1} of ${booking.totalDoses}) for ${vaccine.name} will be due around ${nextDoseStr}. Please remember to book it as the date approaches.`
+            });
+            await followUpNotif.save();
+          }
         }
       }
     }

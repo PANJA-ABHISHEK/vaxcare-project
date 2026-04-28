@@ -1,0 +1,393 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaxCare | Hospital Profile</title>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/profile.css"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"/>
+  <style>
+    .admin-wrap { display:flex; min-height:100vh; }
+    .admin-side { position:fixed; left:0; top:0; width:240px; height:100vh;
+                  display:flex; flex-direction:column; background:#f1f5f9; z-index:50; }
+    .admin-body { margin-left:240px; flex:1; display:flex; flex-direction:column; min-height:100vh; }
+    .admin-top  { display:flex; align-items:center; justify-content:space-between;
+                  padding:0 2rem; height:64px; background:#f8fafc;
+                  border-bottom:1px solid #dbeaf5; position:sticky; top:0; z-index:40; }
+  </style>
+  <script src="/js/interceptor.js"></script>
+  <script src="/js/auth.js"></script>
+</head>
+<body>
+<div class="admin-wrap">
+
+  <!-- Sidebar -->
+  <aside class="admin-side">
+    <div class="brand"><h1>VaxCare</h1><p>Admin Portal</p></div>
+    <nav class="sidenav">
+      <a href="/hospital-admin-dashboard.html" class="navlink">
+        <span class="material-symbols-outlined">dashboard</span><span>Dashboard</span>
+      </a>
+      <a href="/hospital-admin-dashboard.html#bookings" class="navlink">
+        <span class="material-symbols-outlined">calendar_today</span><span>Bookings</span>
+      </a>
+      <a href="/hospital-admin-dashboard.html#vaccines" class="navlink">
+        <span class="material-symbols-outlined">vaccines</span><span>Vaccines</span>
+      </a>
+      <a href="/hospital-profile.html" class="navlink active">
+        <span class="material-symbols-outlined">manage_accounts</span><span>Profile</span>
+      </a>
+    </nav>
+    <div class="sidefoot">
+      <button class="logout" onclick="logoutUser()">
+        <span class="material-symbols-outlined">logout</span><span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-body">
+    <header class="admin-top">
+      <h2 style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:700;">Hospital Profile</h2>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <span id="header-name" style="font-size:.875rem;font-weight:700;color:#0f1d25;"></span>
+        <div id="header-avatar"
+             style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                    color:#fff;display:flex;align-items:center;justify-content:center;
+                    font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+          <img id="header-avatar-img" src="" alt=""
+               style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+          <span id="header-avatar-init"></span>
+        </div>
+      </div>
+    </header>
+
+    <div style="padding:2.5rem;flex:1;max-width:1280px;width:100%;box-sizing:border-box;">
+
+      <!-- Stats strip -->
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="statVaccines">—</div>
+          <div class="profile-stat-lbl">Vaccines Listed</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="statBookings">—</div>
+          <div class="profile-stat-lbl">Total Bookings</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="statRating">—</div>
+          <div class="profile-stat-lbl">Avg Rating</div>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="profile-action-bar">
+        <button class="btn-edit" id="globalEditBtn" onclick="enterEditMode()">
+          <span class="material-symbols-outlined" style="font-size:1rem">edit</span>
+          Edit Profile
+        </button>
+        <button class="save-btn" id="globalSaveBtn"
+                style="display:none;width:auto;padding:.65rem 1.5rem;" onclick="handleProfileSave()">
+          <span class="material-symbols-outlined" style="font-size:1rem">save</span>
+          Save Changes
+        </button>
+        <button class="btn-cancel" id="globalCancelBtn" style="display:none" onclick="cancelEdit()">
+          <span class="material-symbols-outlined" style="font-size:1rem">close</span>
+          Cancel
+        </button>
+      </div>
+
+      <div class="profile-grid">
+
+        <!-- LEFT: Avatar + Security -->
+        <div>
+          <div class="avatar-section">
+            <div class="avatar-ring">
+              <img id="avatarImg" src="" alt="Hospital Logo"
+                   style="display:none;width:110px;height:110px;border-radius:50%;
+                          object-fit:cover;border:4px solid #fff;
+                          box-shadow:0 4px 24px rgba(0,97,164,.18);"/>
+              <div id="avatarInitials" class="avatar-img"
+                   style="display:flex;align-items:center;justify-content:center;"></div>
+              <label id="avatarEditLabel" class="avatar-edit-btn" for="avatarInput"
+                     title="Change logo" style="display:none">
+                <span class="material-symbols-outlined">photo_camera</span>
+              </label>
+              <button id="avatarRemoveBtn" class="avatar-remove-btn" type="button"
+                      title="Remove logo" style="display:none" onclick="removeAvatar()">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+              <input type="file" id="avatarInput" accept="image/*" style="display:none"/>
+            </div>
+            <div class="avatar-name" id="avatarName">—</div>
+            <span class="avatar-role-badge badge-hospital">
+              <span class="material-symbols-outlined" style="font-size:.85rem">local_hospital</span>
+              Hospital
+            </span>
+          </div>
+
+          <!-- Security card -->
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <span class="material-symbols-outlined">lock</span>
+              <h3>Security</h3>
+            </div>
+            <div class="profile-card-body">
+              <button class="pw-toggle-btn" id="pwToggleBtn"
+                      onclick="togglePasswordSection('pwSection','pwToggleBtn')">
+                <span class="material-symbols-outlined">lock</span> Change Password
+              </button>
+              <div class="pw-section" id="pwSection">
+                <div class="pf-group">
+                  <label>Current Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock</span>
+                    <input type="password" id="pwCurrent" placeholder="”¢”¢”¢”¢”¢”¢”¢”¢"/>
+                  </div>
+                </div>
+                <div class="pf-group">
+                  <label>New Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock_open</span>
+                    <input type="password" id="pwNew" placeholder="min. 6 characters"/>
+                  </div>
+                </div>
+                <div class="pf-group">
+                  <label>Confirm Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock_reset</span>
+                    <input type="password" id="pwConfirm" placeholder="repeat new password"/>
+                  </div>
+                </div>
+                <button class="save-btn" id="pwSaveBtn" onclick="handlePasswordChange()">
+                  <span class="material-symbols-outlined" style="font-size:1.1rem">lock_reset</span>
+                  Update Password
+                </button>
+              </div>
+            </div>
+          </div>
+        </div><!-- /left -->
+
+        <!-- RIGHT: Hospital Details -->
+        <div>
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <span class="material-symbols-outlined">local_hospital</span>
+              <h3>Hospital Information</h3>
+            </div>
+            <div class="profile-card-body">
+              <div class="pf-group">
+                <label>Hospital Name</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">local_hospital</span>
+                  <input type="text" id="pfName" placeholder="St. Mary's General Hospital" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Email Address</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">mail</span>
+                  <input type="email" id="pfEmail" placeholder="admin@hospital.com" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Phone Number</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">call</span>
+                  <input type="tel" id="pfPhone" placeholder="+91 44 2345 6789" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Hospital Registration ID</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">badge</span>
+                  <input type="text" id="pfGovtId" placeholder="e.g. AUTH-8829-TN" disabled/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <span class="material-symbols-outlined">location_on</span>
+              <h3>Location &amp; About</h3>
+            </div>
+            <div class="profile-card-body">
+              <div class="pf-group">
+                <label>City / Region</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">location_city</span>
+                  <input type="text" id="pfLocation" placeholder="e.g. Chennai, Tamil Nadu" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Full Address</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">home</span>
+                  <input type="text" id="pfAddress" placeholder="No. 12, Anna Salai, Chennai 600002" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>About / Description</label>
+                <div class="pf-input-wrap pf-no-icon">
+                  <textarea id="pfDescription"
+                    placeholder="Brief description about the hospital..." disabled></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /right -->
+      </div><!-- /profile-grid -->
+    </div>
+
+    <footer class="dash-foot">
+      <div class="foot-logo">VaxCare</div>
+      <p class="foot-note">© 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
+    </footer>
+  </main>
+</div>
+
+<div id="pf-toast"></div>
+<script src="/js/profile.js"></script>
+<script>
+  let _snapshot = {};
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuth('hospital');
+    if (!user) return;
+
+    _syncHeaderFromStorage();
+    initAvatarUpload('avatarInput', 'avatarImg', 'avatarInitials');
+
+    try {
+      const profile = await fetchProfile();
+      populateForm(profile);
+      _snapshot = { ...profile };
+      loadStats(profile.name);
+    } catch (err) {
+      showToast('Could not load profile. Is the server running?', 'error');
+    }
+  });
+
+  function _syncHeaderFromStorage() {
+    const stored = JSON.parse(localStorage.getItem('vaxUser') || '{}');
+    const nameEl = document.getElementById('header-name');
+    const initEl = document.getElementById('header-avatar-init');
+    const imgEl  = document.getElementById('header-avatar-img');
+    if (nameEl) nameEl.innerText = stored.name || '';
+    if (stored.profileImage && imgEl) {
+      imgEl.src = stored.profileImage;
+      imgEl.style.display = 'block';
+      if (initEl) initEl.style.display = 'none';
+    } else if (initEl) {
+      initEl.innerText = (stored.name || 'H').charAt(0).toUpperCase();
+    }
+  }
+
+  function populateForm(p) {
+    document.getElementById('pfName').value        = p.name         || '';
+    document.getElementById('pfEmail').value       = p.email        || '';
+    document.getElementById('pfPhone').value       = p.phone        || '';
+    document.getElementById('pfGovtId').value      = p.governmentId || '';
+    document.getElementById('pfLocation').value    = p.location     || '';
+    document.getElementById('pfAddress').value     = p.address      || '';
+    document.getElementById('pfDescription').value = p.description  || '';
+    document.getElementById('avatarName').innerText = p.name || '—';
+    renderAvatar(p.profileImage, p.name, 'avatarImg', 'avatarInitials');
+    syncHeaderAfterSave(p.name, p.profileImage);
+  }
+
+  async function loadStats(hospitalName) {
+    try {
+      const [vRes, bRes] = await Promise.all([
+        fetch(`/vaccines?hospitalName=${encodeURIComponent(hospitalName)}`),
+        fetch('/bookings')
+      ]);
+      const vaccines = vRes.ok ? await vRes.json() : [];
+      const allBookings = bRes.ok ? await bRes.json() : [];
+      const myBookings = allBookings.filter(b => b.vaccineId?.hospitalName === hospitalName);
+      const rated = myBookings.filter(b => b.rating);
+      const avg   = rated.length
+        ? (rated.reduce((s, b) => s + b.rating, 0) / rated.length).toFixed(1)
+        : '—';
+      document.getElementById('statVaccines').innerText = vaccines.length;
+      document.getElementById('statBookings').innerText = myBookings.length;
+      document.getElementById('statRating').innerText   = avg;
+    } catch (_) { /* stats non-critical */ }
+  }
+
+  function enterEditMode() {
+    _snapshot = {
+      name:         document.getElementById('pfName').value,
+      email:        document.getElementById('pfEmail').value,
+      phone:        document.getElementById('pfPhone').value,
+      governmentId: document.getElementById('pfGovtId').value,
+      location:     document.getElementById('pfLocation').value,
+      address:      document.getElementById('pfAddress').value,
+      description:  document.getElementById('pfDescription').value,
+    };
+    setEditMode(true);
+  }
+
+  function cancelEdit() {
+    document.getElementById('pfName').value        = _snapshot.name         || '';
+    document.getElementById('pfEmail').value       = _snapshot.email        || '';
+    document.getElementById('pfPhone').value       = _snapshot.phone        || '';
+    document.getElementById('pfGovtId').value      = _snapshot.governmentId || '';
+    document.getElementById('pfLocation').value    = _snapshot.location     || '';
+    document.getElementById('pfAddress').value     = _snapshot.address      || '';
+    document.getElementById('pfDescription').value = _snapshot.description  || '';
+    window._profileImageBase64 = null;
+    setEditMode(false);
+  }
+
+  async function handleProfileSave() {
+    const payload = {
+      name:         document.getElementById('pfName').value.trim(),
+      email:        document.getElementById('pfEmail').value.trim(),
+      phone:        document.getElementById('pfPhone').value.trim(),
+      governmentId: document.getElementById('pfGovtId').value.trim(),
+      location:     document.getElementById('pfLocation').value.trim(),
+      address:      document.getElementById('pfAddress').value.trim(),
+      description:  document.getElementById('pfDescription').value.trim(),
+    };
+    if (!payload.name)  { showToast('Hospital name cannot be empty.', 'error');  return; }
+    if (!payload.email) { showToast('Email cannot be empty.', 'error'); return; }
+
+    setLoading('globalSaveBtn', true);
+    try {
+      const data = await saveProfile(payload);
+      populateForm(data.user);
+      _snapshot = { ...data.user };
+      setEditMode(false);
+      showToast('Hospital profile updated successfully!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Update failed.', 'error');
+    } finally {
+      setLoading('globalSaveBtn', false);
+    }
+  }
+
+  async function handlePasswordChange() {
+    const current = document.getElementById('pwCurrent').value;
+    const newPw   = document.getElementById('pwNew').value;
+    const confirm = document.getElementById('pwConfirm').value;
+    if (!current || !newPw || !confirm) {
+      showToast('Please fill all password fields.', 'error'); return;
+    }
+    setLoading('pwSaveBtn', true, 'Update Password');
+    try {
+      await changePassword(current, newPw, confirm);
+      showToast('Password changed successfully!', 'success');
+      ['pwCurrent','pwNew','pwConfirm'].forEach(id => document.getElementById(id).value = '');
+      togglePasswordSection('pwSection', 'pwToggleBtn');
+    } catch (err) {
+      showToast(err.message || 'Password change failed.', 'error');
+    } finally {
+      setLoading('pwSaveBtn', false, 'Update Password');
+    }
+  }
+</script>
+</body>
+</html>

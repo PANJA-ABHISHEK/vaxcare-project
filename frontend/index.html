@@ -1,15 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VaxCare – Vaccine Booking Platform</title>
+  <title>VaxCare ”“ Vaccine Booking Platform</title>
   <meta name="description" content="Book vaccines at certified hospitals near you. VaxCare makes vaccination easy, fast, and reliable."/>
-  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
 </head>
 <body>
 
-<!-- ======== LANDING PAGE ======== -->
+<!-- Landing Page -->
 <div class="landing">
 
   <!-- Navbar -->
@@ -63,25 +63,25 @@
   <!-- Footer -->
   <footer class="site-foot">
     <p><strong>VaxCare</strong> &nbsp;·&nbsp; <a href="#">Privacy Policy</a> &nbsp;·&nbsp; <a href="#">Terms of Service</a> &nbsp;·&nbsp; <a href="#">Support</a></p>
-    <p style="margin-top:0.5rem;">© 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
-  </footer>
+    <p style="margin-top:0.5rem;">&copy; 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
+  </footer>         
 
 </div>
 
-<!-- ======== AUTH MODAL ======== -->
+<!-- Auth Modal (Login / Signup overlay) -->
 <div id="loginModal" class="overlay hidden">
   <div class="modal">
     <button class="close-btn" onclick="closeAuthModal()">
       <span class="material-symbols-outlined">close</span>
     </button>
 
-    <!-- Login / Signup Tab bar -->
+    <!-- Tab bar: Login / Signup -->
     <div class="tab-row">
       <div class="tab active" id="tab-login" onclick="switchTab('login')">Login</div>
       <div class="tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</div>
     </div>
 
-    <!-- LOGIN FORM -->
+    <!-- Login Form â†’ POST /login -->
     <form id="loginForm" onsubmit="handleAuthSubmit(event,'login')">
       <div class="fgroup">
         <label>I am a</label>
@@ -115,10 +115,11 @@
         <label>Password</label>
         <div class="finput">
           <span class="ficon material-symbols-outlined">lock</span>
-          <input class="input" type="password" name="password" placeholder="••••••••" required/>
+          <input class="input" type="password" name="password" placeholder="”¢”¢”¢”¢”¢”¢”¢”¢" required/>
         </div>
       </div>
 
+      <!-- Error message -->
       <div id="loginError" class="alert alert-error hidden" style="margin-bottom:1rem;"></div>
 
       <button class="btn btn-blue btn-full" type="submit">Login to VaxCare</button>
@@ -128,10 +129,10 @@
       </p>
     </form>
 
-    <!-- SIGNUP FORM -->
+    <!-- Signup Form (2-step wizard) â†’ POST /signup -->
     <form id="signupForm" class="hidden" onsubmit="handleAuthSubmit(event,'signup')">
 
-      <!-- Step 1: Role -->
+      <!-- Step 1: Pick role â†’ nextSignupStep() -->
       <div id="signupStep1">
         <div class="fgroup">
           <label>I am registering as</label>
@@ -159,7 +160,7 @@
         </p>
       </div>
 
-      <!-- Step 2: Details -->
+      <!-- Step 2: Fill details (fields swap based on role) -->
       <div id="signupStep2" class="hidden">
         <button type="button" class="back-btn" onclick="prevSignupStep()">
           <span class="material-symbols-outlined" style="font-size:1rem;">arrow_back</span> Back
@@ -227,7 +228,7 @@
           <label>Create Password</label>
           <div class="finput">
             <span class="ficon material-symbols-outlined">lock</span>
-            <input class="input" type="password" name="password" placeholder="••••••••" required/>
+            <input class="input" type="password" name="password" placeholder="”¢”¢”¢”¢”¢”¢”¢”¢" required/>
           </div>
         </div>
 
@@ -240,8 +241,10 @@
   </div>
 </div>
 
+<!-- auth.js ”“ handles modal, tabs, signup wizard, login/signup API calls -->
 <script src="/js/auth.js"></script>
 <script>
+  // Auto-redirect if already logged in
   document.addEventListener('DOMContentLoaded', () => {
     redirectIfLoggedIn();
   });

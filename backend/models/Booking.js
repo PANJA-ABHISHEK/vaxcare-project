@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
   userId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User',    required: true },
@@ -6,7 +6,9 @@ const bookingSchema = new mongoose.Schema({
   date:      { type: String, required: true },
   time:      { type: String, required: true },
   status:    { type: String, default: 'Pending' },
-  rating:    { type: Number }
+  rating:    { type: Number },
+  doseNumber:{ type: Number, default: 1 },
+  totalDoses:{ type: Number, default: 1 }
 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

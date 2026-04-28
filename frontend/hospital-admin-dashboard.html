@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VaxCare | Hospital Admin Dashboard</title>
-  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
   <style>
     /* Admin-specific layout overrides */
     .admin-wrap   { display: flex; min-height: 100vh; }
@@ -66,6 +66,10 @@
         <span class="material-symbols-outlined">vaccines</span>
         <span>Vaccines</span>
       </a>
+      <a href="/hospital-profile.html" class="navlink" data-target="profile">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        <span>Profile</span>
+      </a>
     </nav>
     <div class="sidefoot">
       <button class="logout" onclick="logoutUser()">
@@ -83,7 +87,14 @@
       <h2 id="header-title" style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:700;">Dashboard Overview</h2>
       <div style="display:flex;align-items:center;gap:.75rem;">
         <span id="header-name" style="font-size:.875rem;font-weight:700;color:#0f1d25;">Hospital Admin</span>
-        <div id="header-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #0061a4, #00a8ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;"></div>
+        <div id="header-avatar"
+             style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                    color:#fff;display:flex;align-items:center;justify-content:center;
+                    font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+          <img id="header-avatar-img" src="" alt=""
+               style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+          <span id="header-avatar-init"></span>
+        </div>
       </div>
     </header>
 
@@ -182,15 +193,35 @@
               </div>
               <div class="two-col" style="margin-bottom:1rem;">
                 <div class="field">
-                  <label>Cost (₹)</label>
+                  <label>Cost (â‚¹)</label>
                   <input id="add-vax-cost" type="number" placeholder="500" min="0" step="0.01"/>
                 </div>
-                <div class="field"></div>
+                <div class="field">
+                  <label>Total Doses</label>
+                  <input id="add-vax-doses" type="number" placeholder="1" min="1" value="1" onchange="toggleDaysBetweenDoses()"/>
+                </div>
+              </div>
+              <div class="field" id="wrap-vax-days" style="margin-bottom:1rem; display:none;">
+                <label>Days Between Doses</label>
+                <input id="add-vax-days" type="number" placeholder="28" min="0" value="0"/>
               </div>
               <button onclick="registerVaccine()" class="btn btn-blue btn-full" style="margin-top:.5rem;">
                 Register Vaccine
               </button>
             </div>
+            
+            <script>
+              function toggleDaysBetweenDoses() {
+                const doses = document.getElementById('add-vax-doses').value;
+                const wrap = document.getElementById('wrap-vax-days');
+                if (doses > 1) {
+                  wrap.style.display = 'block';
+                } else {
+                  wrap.style.display = 'none';
+                  document.getElementById('add-vax-days').value = 0;
+                }
+              }
+            </script>
 
             <!-- Hospital Timings Card -->
             <div class="panel" style="padding:2rem;">
@@ -247,9 +278,8 @@
         const currentUser = userStr ? JSON.parse(userStr) : { name: "Hospital Admin" };
         const currentHospitalName = currentUser.name;
 
-        document.getElementById('header-name').innerText = currentHospitalName;
-        const avatarEl = document.getElementById('header-avatar');
-        if (avatarEl) avatarEl.innerText = currentHospitalName.charAt(0).toUpperCase();
+        // Sync header UI
+        syncTopNav();
 
         try {
             const [vaxRes, aptRes] = await Promise.all([
@@ -340,6 +370,7 @@
                                     </h4>
                                     <p style="font-size:.875rem;color:#404752;display:flex;align-items:center;gap:.3rem;">
                                         <span class="material-symbols-outlined" style="font-size:1rem;">vaccines</span>${vaxName}
+                                        ${(apt.totalDoses > 1 || (apt.vaccineId && apt.vaccineId.dosesRequired > 1)) ? `<span style="display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;vertical-align:middle;">Dose ${apt.doseNumber || 1}/${apt.totalDoses > 1 ? apt.totalDoses : apt.vaccineId.dosesRequired}</span>` : ''}
                                     </p>
                                 </div>
                                 ${statusBadge}
@@ -366,6 +397,7 @@
                                     </h4>
                                     <p style="font-size:.875rem;color:#404752;">
                                         <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">vaccines</span> ${vaxName}
+                                        ${(apt.totalDoses > 1 || (apt.vaccineId && apt.vaccineId.dosesRequired > 1)) ? `<span style="display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#f3f4f6;color:#4b5563;vertical-align:middle;">Dose ${apt.doseNumber || 1}/${apt.totalDoses > 1 ? apt.totalDoses : apt.vaccineId.dosesRequired}</span>` : ''}
                                     </p>
                                 </div>
                                 <span class="badge badge-completed">Completed</span>
@@ -394,7 +426,7 @@
                         <tr>
                             <td style="font-weight:700;">${vax.name}</td>
                             <td>${vax.doctorName || 'Staff'} <span style="font-size:.75rem;color:#404752;">(${vax.experience || '0 yrs'})</span></td>
-                            <td style="font-weight:700;color:#065f46;">₹${(vax.cost || 0).toLocaleString('en-IN')}</td>
+                            <td style="font-weight:700;color:#065f46;">â‚¹${(vax.cost || 0).toLocaleString('en-IN')}</td>
                             <td>${stockBadge}</td>
                             <td style="text-align:right;">
                                 <button class="btn-stock" onclick="addStock('${vax._id}',50)">+50 Stock</button>
@@ -446,9 +478,11 @@
         const exp    = document.getElementById('add-vax-exp').value.trim();
         const stock  = parseInt(document.getElementById('add-vax-stock').value) || 0;
         const cost   = parseFloat(document.getElementById('add-vax-cost').value);
+        const dosesRequired = parseInt(document.getElementById('add-vax-doses').value) || 1;
+        const daysBetweenDoses = parseInt(document.getElementById('add-vax-days').value) || 0;
 
         if (!name)   { alert('Vaccine name is required'); return; }
-        if (isNaN(cost) || cost < 0) { alert('Please enter a valid cost (≥ 0)'); return; }
+        if (isNaN(cost) || cost < 0) { alert('Please enter a valid cost (â‰¥ 0)'); return; }
         if (!doctor) { alert('Doctor name is required');  return; }
 
         const userStr = localStorage.getItem('vaxUser');
@@ -467,13 +501,16 @@
                     cost,
                     hospitalName: user.name || 'Hospital',
                     location,
-                    rating: 0
+                    rating: 0,
+                    dosesRequired,
+                    daysBetweenDoses
                 })
             });
             const data = await res.json();
             if (!res.ok) { alert('Failed to add vaccine: ' + (data.message || 'Server error')); return; }
-            ['add-vax-name','add-vax-doctor','add-vax-exp','add-vax-stock','add-vax-cost']
+            ['add-vax-name','add-vax-doctor','add-vax-exp','add-vax-stock','add-vax-cost', 'add-vax-doses', 'add-vax-days']
                 .forEach(id => document.getElementById(id).value = '');
+            document.getElementById('wrap-vax-days').style.display = 'none';
             loadAdminData();
         } catch (err) {
             console.error(err);
@@ -580,10 +617,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ timings: data })
             });
-            btn.textContent = '✓ Saved!';
+            btn.textContent = 'âœ“ Saved!';
             btn.style.background = '#16a34a';
         } catch {
-            btn.textContent = '✓ Local only';
+            btn.textContent = 'âœ“ Local only';
             btn.style.background = '#ca8a04';
         }
         setTimeout(() => { btn.textContent = 'Save Timings'; btn.style.background = ''; }, 2000);

@@ -1,0 +1,394 @@
+/* ─────────────────────────────────────────────────────────────────
+   profile.css  – VaxCare Profile Management Styles
+   Follows existing VaxCare design tokens (blues, whites, Manrope)
+   ───────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+/* ── Edit / View Mode Action Bar ─────────────────────────────────── */
+.profile-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.35rem;
+  border: 1.5px solid #0061a4;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #0061a4;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.btn-edit:hover { background: #e9f5ff; box-shadow: 0 2px 10px rgba(0,97,164,.12); }
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.2rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #64748b;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.btn-cancel:hover { background: #f1f5f9; }
+
+/* Disabled fields look like read-only labels */
+.pf-input-wrap input:disabled,
+.pf-input-wrap select:disabled,
+.pf-input-wrap textarea:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: #1e293b;
+  font-weight: 600;
+  cursor: default;
+  padding-left: 2.6rem;
+}
+.pf-no-icon .pf-input-wrap textarea:disabled { padding-left: 0.9rem; }
+
+/* Hide icons when read-only for cleaner look */
+.view-mode .pf-icon { opacity: 0.3; }
+
+
+/* ── Avatar Upload ───────────────────────────────────────────────── */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #e9f5ff 0%, #f0f7ff 100%);
+  border-radius: 1.5rem;
+  border: 1px solid #dbeaf5;
+  margin-bottom: 2rem;
+}
+
+.avatar-ring {
+  position: relative;
+  width: 110px;
+  height: 110px;
+}
+
+.avatar-img {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 24px rgba(0, 97, 164, 0.18);
+  background: linear-gradient(135deg, #0061a4, #00a8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0061a4;
+  color: #fff;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(0,97,164,0.3);
+}
+.avatar-edit-btn:hover { background: #004880; }
+.avatar-edit-btn .material-symbols-outlined { font-size: 1rem; }
+
+.avatar-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #fff;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(225,29,72,0.3);
+  padding: 0;
+}
+.avatar-remove-btn:hover { background: #be123c; }
+.avatar-remove-btn .material-symbols-outlined { font-size: 1rem; }
+
+.avatar-name {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f1d25;
+}
+.avatar-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.badge-patient  { background: #d1fae5; color: #065f46; }
+.badge-hospital { background: #dbeafe; color: #1e40af; }
+
+/* ── Profile Card Grid ───────────────────────────────────────────── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Section Cards ───────────────────────────────────────────────── */
+.profile-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  border: 1px solid #dbeaf5;
+  box-shadow: 0 2px 16px rgba(15,29,37,0.06);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.profile-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid #e9f5ff;
+  background: #f8fafc;
+}
+.profile-card-head h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f1d25;
+  margin: 0;
+}
+.profile-card-head .material-symbols-outlined {
+  color: #0061a4;
+  font-size: 1.2rem;
+}
+.profile-card-body {
+  padding: 1.75rem;
+}
+
+/* ── Form Fields ─────────────────────────────────────────────────── */
+.pf-group {
+  margin-bottom: 1.25rem;
+}
+.pf-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #404752;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pf-input-wrap {
+  position: relative;
+}
+.pf-input-wrap .pf-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+.pf-input-wrap input,
+.pf-input-wrap select,
+.pf-input-wrap textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem 0.7rem 2.6rem;
+  border: 1.5px solid #dbeaf5;
+  border-radius: 0.75rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.9rem;
+  color: #0f1d25;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  outline: none;
+}
+.pf-input-wrap textarea {
+  resize: vertical;
+  min-height: 90px;
+  padding-top: 0.7rem;
+}
+.pf-input-wrap input:focus,
+.pf-input-wrap select:focus,
+.pf-input-wrap textarea:focus {
+  border-color: #0061a4;
+  box-shadow: 0 0 0 3px rgba(0,97,164,0.1);
+  background: #fff;
+}
+.pf-input-wrap input:disabled,
+.pf-input-wrap select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.pf-no-icon input,
+.pf-no-icon select,
+.pf-no-icon textarea {
+  padding-left: 0.9rem;
+}
+.pf-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+@media (max-width: 600px) { .pf-two-col { grid-template-columns: 1fr; } }
+
+/* ── Password Card ───────────────────────────────────────────────── */
+.pw-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 1.5px solid #dbeaf5;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0061a4;
+  cursor: pointer;
+  transition: background 0.18s;
+  margin-bottom: 1rem;
+}
+.pw-toggle-btn:hover { background: #e9f5ff; }
+.pw-section { display: none; }
+.pw-section.open { display: block; }
+
+/* ── Save Button ─────────────────────────────────────────────────── */
+.save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 0.9rem;
+  background: #0061a4;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(0,97,164,0.25);
+  margin-top: 0.5rem;
+}
+.save-btn:hover   { background: #004880; box-shadow: 0 6px 20px rgba(0,97,164,0.35); }
+.save-btn:active  { transform: scale(0.98); }
+.save-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+/* ── Toast Notifications ─────────────────────────────────────────── */
+#pf-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0.9rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(15,29,37,0.15);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 3s forwards;
+  pointer-events: auto;
+}
+.toast-success { background: #d1fae5; color: #065f46; }
+.toast-error   { background: #fee2e2; color: #991b1b; }
+@keyframes toastIn  { from { opacity:0; transform:translateY(12px);} to { opacity:1; transform:translateY(0);} }
+@keyframes toastOut { from { opacity:1;} to { opacity:0; transform:translateY(12px);} }
+
+/* ── Loading Skeleton ────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f4f8 25%, #e2eaf3 50%, #f0f4f8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 0.5rem;
+  height: 2.5rem;
+  margin-bottom: 1.25rem;
+}
+@keyframes shimmer { from { background-position:200% 0;} to { background-position:-200% 0;} }
+
+/* ── Stat Strip (hospital) ───────────────────────────────────────── */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.profile-stat {
+  background: #fff;
+  border: 1px solid #dbeaf5;
+  border-radius: 1rem;
+  padding: 1.1rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(15,29,37,0.04);
+}
+.profile-stat-val {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #0061a4;
+  line-height: 1;
+}
+.profile-stat-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+@media (max-width: 600px) { .profile-stats { grid-template-columns: 1fr 1fr; } }

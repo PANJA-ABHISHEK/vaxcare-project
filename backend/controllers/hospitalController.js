@@ -1,6 +1,6 @@
-const User    = require('../../database/models/User');
-const Vaccine  = require('../../database/models/Vaccine');
-const Booking  = require('../../database/models/Booking');
+﻿const User    = require('../models/User');
+const Vaccine  = require('../models/Vaccine');
+const Booking  = require('../models/Booking');
 
 // GET /hospitals
 const getHospitals = async (req, res) => {

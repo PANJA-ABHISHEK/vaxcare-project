@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router  = express.Router();
 const { getBookings, getBookedSlots, createBooking, updateBooking } = require('../controllers/bookingController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');

@@ -1,0 +1,338 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaxCare ”“ My Profile</title>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/profile.css"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"/>
+  <script src="/js/interceptor.js"></script>
+  <script src="/js/auth.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand"><h1>VaxCare</h1><p>Clinical Portal</p></div>
+    <nav class="sidenav">
+      <a class="navlink" href="/patient-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span><span>Dashboard</span>
+      </a>
+      <a class="navlink" href="/patient-appointments.html">
+        <span class="material-symbols-outlined">calendar_today</span><span>My Appointments</span>
+      </a>
+      <a class="navlink active" href="/patient-profile.html">
+        <span class="material-symbols-outlined">manage_accounts</span><span>My Profile</span>
+      </a>
+    </nav>
+    <div class="sidefoot">
+      <button class="logout" onclick="logoutUser()">
+        <span class="material-symbols-outlined">logout</span><span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="header">
+      <h2 class="header-title">My Profile</h2>
+      <div class="header-right">
+        <div class="header-user">
+          <span class="header-name" id="top-nav-name"></span>
+          <!-- Avatar: shows image if set, else initials -->
+          <div id="top-nav-avatar"
+               style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                      color:#fff;display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+            <img id="header-avatar-img" src="" alt=""
+                 style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+            <span id="header-avatar-init"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Action Bar: Edit / Save / Cancel -->
+      <div class="profile-action-bar">
+        <button class="btn-edit" id="globalEditBtn" onclick="enterEditMode()">
+          <span class="material-symbols-outlined" style="font-size:1rem">edit</span>
+          Edit Profile
+        </button>
+        <button class="save-btn" id="globalSaveBtn"
+                style="display:none;width:auto;padding:.65rem 1.5rem;" onclick="handleProfileSave()">
+          <span class="material-symbols-outlined" style="font-size:1rem">save</span>
+          Save Changes
+        </button>
+        <button class="btn-cancel" id="globalCancelBtn" style="display:none" onclick="cancelEdit()">
+          <span class="material-symbols-outlined" style="font-size:1rem">close</span>
+          Cancel
+        </button>
+      </div>
+
+      <div class="profile-grid" id="profileGrid">
+
+        <!-- LEFT: Avatar + Security -->
+        <div>
+          <div class="avatar-section">
+            <div class="avatar-ring">
+              <img id="avatarImg" src="" alt="Avatar"
+                   style="display:none;width:110px;height:110px;border-radius:50%;
+                          object-fit:cover;border:4px solid #fff;box-shadow:0 4px 24px rgba(0,97,164,.18);"/>
+              <div id="avatarInitials" class="avatar-img"
+                   style="display:flex;align-items:center;justify-content:center;"></div>
+              <label id="avatarEditLabel" class="avatar-edit-btn" for="avatarInput"
+                     title="Change photo" style="display:none">
+                <span class="material-symbols-outlined">photo_camera</span>
+              </label>
+              <button id="avatarRemoveBtn" class="avatar-remove-btn" type="button"
+                      title="Remove photo" style="display:none" onclick="removeAvatar()">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+              <input type="file" id="avatarInput" accept="image/*" style="display:none"/>
+            </div>
+            <div class="avatar-name" id="avatarName">—</div>
+            <span class="avatar-role-badge badge-patient">
+              <span class="material-symbols-outlined" style="font-size:.85rem">person</span> Patient
+            </span>
+          </div>
+
+          <!-- Security card -->
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <span class="material-symbols-outlined">lock</span>
+              <h3>Security</h3>
+            </div>
+            <div class="profile-card-body">
+              <button class="pw-toggle-btn" id="pwToggleBtn"
+                      onclick="togglePasswordSection('pwSection','pwToggleBtn')">
+                <span class="material-symbols-outlined">lock</span> Change Password
+              </button>
+              <div class="pw-section" id="pwSection">
+                <div class="pf-group">
+                  <label>Current Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock</span>
+                    <input type="password" id="pwCurrent" placeholder="”¢”¢”¢”¢”¢”¢”¢”¢"/>
+                  </div>
+                </div>
+                <div class="pf-group">
+                  <label>New Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock_open</span>
+                    <input type="password" id="pwNew" placeholder="min. 6 characters"/>
+                  </div>
+                </div>
+                <div class="pf-group">
+                  <label>Confirm Password</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">lock_reset</span>
+                    <input type="password" id="pwConfirm" placeholder="repeat new password"/>
+                  </div>
+                </div>
+                <button class="save-btn" id="pwSaveBtn" onclick="handlePasswordChange()">
+                  <span class="material-symbols-outlined" style="font-size:1.1rem">lock_reset</span>
+                  Update Password
+                </button>
+              </div>
+            </div>
+          </div>
+        </div><!-- /left -->
+
+        <!-- RIGHT: Forms -->
+        <div>
+          <!-- Personal Info -->
+          <div class="profile-card">
+            <div class="profile-card-head">
+              <span class="material-symbols-outlined">person</span>
+              <h3>Personal Information</h3>
+            </div>
+            <div class="profile-card-body">
+              <div class="pf-group">
+                <label>Full Name</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">badge</span>
+                  <input type="text" id="pfName" placeholder="John Doe" disabled/>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Email Address</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">mail</span>
+                  <input type="email" id="pfEmail" placeholder="name@example.com" disabled/>
+                </div>
+              </div>
+              <div class="pf-two-col">
+                <div class="pf-group">
+                  <label>Age</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">cake</span>
+                    <input type="number" id="pfAge" placeholder="25" min="1" max="120" disabled/>
+                  </div>
+                </div>
+                <div class="pf-group">
+                  <label>Gender</label>
+                  <div class="pf-input-wrap">
+                    <span class="material-symbols-outlined pf-icon">wc</span>
+                    <select id="pfGender" disabled>
+                      <option value="">Select</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="pf-group">
+                <label>Phone Number</label>
+                <div class="pf-input-wrap">
+                  <span class="material-symbols-outlined pf-icon">call</span>
+                  <input type="tel" id="pfPhone" placeholder="+91 98765 43210" disabled/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+        </div><!-- /right -->
+      </div><!-- /profile-grid -->
+    </main>
+
+    <footer class="dash-foot">
+      <div class="foot-logo">VaxCare</div>
+      <p class="foot-note">© 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
+    </footer>
+  </div>
+</div>
+
+<div id="pf-toast"></div>
+<script src="/js/profile.js"></script>
+<script>
+  // Snapshot of data before edit (used by Cancel)
+  let _snapshot = {};
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuth('patient');
+    if (!user) return;
+
+    // Populate header from localStorage first (instant, no flicker)
+    _syncHeaderFromStorage();
+
+    initAvatarUpload('avatarInput', 'avatarImg', 'avatarInitials');
+
+    try {
+      const profile = await fetchProfile();
+      populateForm(profile);
+      _snapshot = { ...profile };
+    } catch (err) {
+      showToast('Could not load profile. Is the server running?', 'error');
+    }
+  });
+
+  // Populate header name + avatar from localStorage (fast)
+  function _syncHeaderFromStorage() {
+    const stored = JSON.parse(localStorage.getItem('vaxUser') || '{}');
+    const nameEl = document.getElementById('top-nav-name');
+    const initEl = document.getElementById('header-avatar-init');
+    const imgEl  = document.getElementById('header-avatar-img');
+    if (nameEl) nameEl.innerText = stored.name || '';
+    if (stored.profileImage && imgEl) {
+      imgEl.src = stored.profileImage;
+      imgEl.style.display = 'block';
+      if (initEl) initEl.style.display = 'none';
+    } else if (initEl) {
+      initEl.innerText = (stored.name || '?').charAt(0).toUpperCase();
+    }
+  }
+
+  function populateForm(p) {
+    document.getElementById('pfName').value     = p.name         || '';
+    document.getElementById('pfEmail').value    = p.email        || '';
+    document.getElementById('pfAge').value      = p.age          || '';
+    document.getElementById('pfGender').value   = p.gender       || '';
+    document.getElementById('pfPhone').value    = p.phone        || '';
+
+
+    document.getElementById('avatarName').innerText = p.name || '—';
+    renderAvatar(p.profileImage, p.name, 'avatarImg', 'avatarInitials');
+
+    // Also keep header in sync
+    syncHeaderAfterSave(p.name, p.profileImage);
+  }
+
+  function enterEditMode() {
+    // Save snapshot before editing
+    _snapshot = {
+      name: document.getElementById('pfName').value,
+      email: document.getElementById('pfEmail').value,
+      age: document.getElementById('pfAge').value,
+      gender: document.getElementById('pfGender').value,
+      phone: document.getElementById('pfPhone').value,
+
+    };
+    setEditMode(true);
+  }
+
+  function cancelEdit() {
+    // Restore snapshot values
+    document.getElementById('pfName').value     = _snapshot.name         || '';
+    document.getElementById('pfEmail').value    = _snapshot.email        || '';
+    document.getElementById('pfAge').value      = _snapshot.age          || '';
+    document.getElementById('pfGender').value   = _snapshot.gender       || '';
+    document.getElementById('pfPhone').value    = _snapshot.phone        || '';
+
+    window._profileImageBase64 = null;
+    setEditMode(false);
+  }
+
+  async function handleProfileSave() {
+    const payload = {
+      name:         document.getElementById('pfName').value.trim(),
+      email:        document.getElementById('pfEmail').value.trim(),
+      age:          Number(document.getElementById('pfAge').value) || undefined,
+      gender:       document.getElementById('pfGender').value,
+      phone:        document.getElementById('pfPhone').value.trim(),
+
+    };
+    if (!payload.name)  { showToast('Name cannot be empty.', 'error');  return; }
+    if (!payload.email) { showToast('Email cannot be empty.', 'error'); return; }
+
+    setLoading('globalSaveBtn', true);
+    try {
+      const data = await saveProfile(payload);
+      populateForm(data.user);
+      _snapshot = { ...data.user };
+      setEditMode(false);
+      showToast('Profile updated successfully!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Update failed.', 'error');
+    } finally {
+      setLoading('globalSaveBtn', false);
+    }
+  }
+
+  async function handlePasswordChange() {
+    const current = document.getElementById('pwCurrent').value;
+    const newPw   = document.getElementById('pwNew').value;
+    const confirm = document.getElementById('pwConfirm').value;
+    if (!current || !newPw || !confirm) {
+      showToast('Please fill all password fields.', 'error'); return;
+    }
+    setLoading('pwSaveBtn', true, 'Update Password');
+    try {
+      await changePassword(current, newPw, confirm);
+      showToast('Password changed successfully!', 'success');
+      ['pwCurrent','pwNew','pwConfirm'].forEach(id => document.getElementById(id).value = '');
+      togglePasswordSection('pwSection', 'pwToggleBtn');
+    } catch (err) {
+      showToast(err.message || 'Password change failed.', 'error');
+    } finally {
+      setLoading('pwSaveBtn', false, 'Update Password');
+    }
+  }
+</script>
+</body>
+</html>

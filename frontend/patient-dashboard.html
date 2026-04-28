@@ -1,13 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VaxCare – Patient Dashboard</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <script src="/js/interceptor.js"></script>
-    <script src="/js/auth.js"></script>
+    <title>VaxCare ”“ Patient Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/notifications.css" />
+    <script src="/js/interceptor.js"></script> <!-- auto-injects JWT token -->
+    <script src="/js/auth.js"></script>         <!-- checkAuth, syncTopNav, logout -->
 </head>
 
 <body>
@@ -29,6 +30,10 @@
                     <span class="material-symbols-outlined">calendar_today</span>
                     <span>My Appointments</span>
                 </a>
+                <a class="navlink" href="/patient-profile.html">
+                    <span class="material-symbols-outlined">manage_accounts</span>
+                    <span>My Profile</span>
+                </a>
             </nav>
             <div class="sidefoot">
                 <button class="logout" onclick="logoutUser()">
@@ -45,17 +50,45 @@
             <header class="header">
                 <h2 class="header-title">Dashboard</h2>
                 <div class="header-right">
+                    <!-- Notification Bell -->
+                    <div class="notif-bell-container" id="notifContainer">
+                        <button class="notif-btn" id="notifBtn">
+                            <span class="material-symbols-outlined">notifications</span>
+                            <div class="notif-badge hidden" id="notifBadge">0</div>
+                        </button>
+                        
+                        <!-- Dropdown Panel -->
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-head">
+                                <h3>Notifications</h3>
+                                <button id="markAllReadBtn">Mark all as read</button>
+                            </div>
+                            <div class="notif-body" id="notifList">
+                                <div class="notif-empty">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="header-user">
                         <span class="header-name" id="top-nav-name">Welcome back</span>
-                        <div id="top-nav-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, #0061a4, #00a8ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;"></div>
+                        <div id="top-nav-avatar"
+                             style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                                    color:#fff;display:flex;align-items:center;justify-content:center;
+                                    font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+                          <img id="header-avatar-img" src="" alt=""
+                               style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+                          <span id="header-avatar-init"></span>
+                        </div>
                     </div>
                 </div>
             </header>
 
+            <!-- Upcoming Reminder Placeholder Removed -->
+
             <!-- Page Content -->
             <main class="content">
 
-                <!-- Search Panel -->
+                <!-- Search Panel: vaccine name, location, rating filters -->
                 <div class="search">
                     <div class="search-col" style="flex:2;">
                         <label>Search Vaccine</label>
@@ -119,6 +152,12 @@
 
             </main>
 
+            <!-- Toast Container -->
+            <div class="toast-container" id="toastContainer"></div>
+
+            <!-- Floating Reminder -->
+            <div id="floatingReminder" class="floating-reminder"></div>
+
             <!-- Footer -->
             <footer class="dash-foot">
                 <div class="foot-logo">VaxCare</div>
@@ -136,20 +175,287 @@
     <script>
         function logoutUser() {
             localStorage.removeItem('vaxUser');
+            localStorage.removeItem('vaxToken');
             window.location.href = '/index.html';
         }
 
-        function syncTopNav() {
-            const p = JSON.parse(localStorage.getItem('vaxUser'));
-            if (p) {
-                const el = document.getElementById('top-nav-name');
-                if (el) el.innerText = 'Welcome back, ' + p.name.split(' ')[0];
-                const avatarEl = document.getElementById('top-nav-avatar');
-                if (avatarEl) avatarEl.innerText = p.name.charAt(0).toUpperCase();
+        // =============================================
+        // NOTIFICATIONS & REMINDERS SYSTEM
+        // =============================================
+        const notifBtn = document.getElementById('notifBtn');
+        const notifDropdown = document.getElementById('notifDropdown');
+        const notifBadge = document.getElementById('notifBadge');
+        const notifList = document.getElementById('notifList');
+        const toastContainer = document.getElementById('toastContainer');
+        const token = localStorage.getItem('vaxToken');
+
+        // Toggle Notification Dropdown
+        notifBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#notifContainer')) {
+                notifDropdown.classList.remove('show');
+            }
+        });
+
+        // Show Toast Notification
+        function showToast(title, message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = 'info';
+            if (type === 'success') icon = 'check_circle';
+            if (type === 'warning') icon = 'warning';
+            toast.innerHTML = `
+                <div class="toast-icon"><span class="material-symbols-outlined">${icon}</span></div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()"><span class="material-symbols-outlined">close</span></button>
+            `;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 5000);
+        }
+
+        async function fetchNotifications() {
+            try {
+                const res = await fetch('/notifications', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) { renderNotifications(await res.json()); }
+            } catch (err) { console.error('Error fetching notifications:', err); }
+        }
+
+        function renderNotifications(notifications) {
+            notifList.innerHTML = '';
+            const unreadCount = notifications.filter(n => !n.read).length;
+            
+            // Handle badge and shake animation
+            if (unreadCount > 0) { 
+                const currentCount = parseInt(notifBadge.textContent) || 0;
+                if (unreadCount > currentCount) {
+                    notifBtn.classList.remove('shake');
+                    void notifBtn.offsetWidth; // trigger reflow
+                    notifBtn.classList.add('shake');
+                }
+                notifBadge.textContent = unreadCount; 
+                notifBadge.classList.remove('hidden'); 
+            } else { 
+                notifBadge.classList.add('hidden'); 
+            }
+            
+            if (notifications.length === 0) { 
+                notifList.innerHTML = `
+                  <div class="notif-empty" style="padding: 3rem 2rem; text-align: center;">
+                    <div style="width: 64px; height: 64px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                      <span class="material-symbols-outlined" style="font-size: 2rem; color: #94a3b8;">notifications_off</span>
+                    </div>
+                    <h4 style="color: #0f1d25; font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">You're all caught up!</h4>
+                    <p style="color: #64748b; font-size: 0.85rem; line-height: 1.4;">When you book a vaccine or receive a reminder, it will show up here.</p>
+                  </div>
+                `; 
+                return; 
+            }
+            notifications.forEach(notif => {
+                const item = document.createElement('div');
+                item.className = `notif-item ${notif.read ? '' : 'unread'}`;
+                
+                const date = new Date(notif.createdAt);
+                const timeStr = date.toLocaleDateString() === new Date().toLocaleDateString() 
+                  ? `Today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
+                  : date.toLocaleDateString([], {month: 'short', day: 'numeric'});
+
+                // Check if we have appointment details to show dynamic countdown
+                let extraDesc = '';
+                if (notif.appointmentDate && notif.appointmentTime) {
+                    const dynamicText = getDynamicCountdownText(notif.appointmentDate, notif.appointmentTime);
+                    const isUrgent = dynamicText.includes('hours') || dynamicText.includes('missed');
+                    extraDesc = `<div class="notif-time" style="margin-top: 0.3rem; color: ${isUrgent ? '#ba1a1a' : '#0061a4'}; font-weight: 700;">${dynamicText}</div>`;
+                }
+
+                item.innerHTML = `
+                  <div class="notif-icon">
+                    <span class="material-symbols-outlined">vaccines</span>
+                  </div>
+                  <div class="notif-content">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div class="notif-title">${notif.title}</div>
+                        <button onclick="deleteNotification('${notif._id}', event)" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:2px; border-radius:4px;" title="Delete Notification">
+                            <span class="material-symbols-outlined" style="font-size: 1rem;">delete</span>
+                        </button>
+                    </div>
+                    <div class="notif-desc">${notif.message}</div>
+                    <div class="notif-time">${timeStr}</div>
+                    ${extraDesc}
+                  </div>
+                `;
+
+                item.addEventListener('click', () => {
+                  if (!notif.read) markAsRead(notif._id, item);
+                });
+
+                notifList.appendChild(item);
+            });
+        }
+
+        async function markAsRead(id, element) {
+            try {
+                const res = await fetch(`/notifications/${id}/read`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    element.classList.remove('unread');
+                    const currentCount = parseInt(notifBadge.textContent);
+                    if (currentCount > 1) {
+                        notifBadge.textContent = currentCount - 1;
+                    } else {
+                        notifBadge.classList.add('hidden');
+                    }
+                }
+            } catch (err) {
+                console.error('Error marking notification as read:', err);
             }
         }
 
-        // Custom rating dropdown state
+        document.getElementById('markAllReadBtn').addEventListener('click', () => {
+            notifList.querySelectorAll('.notif-item.unread').forEach(i => i.classList.remove('unread'));
+            notifBadge.classList.add('hidden');
+        });
+
+        async function deleteNotification(id, event) {
+            event.stopPropagation(); // prevent triggering markAsRead
+            try {
+                const res = await fetch(`/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    fetchNotifications(); // Reload list
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert('Failed to delete notification. \n\nPlease restart your Node.js server (npm start) so it registers the new DELETE route!');
+                    console.error('Failed to delete notification');
+                }
+            } catch (err) {
+                console.error('Error deleting notification:', err);
+                alert('Failed to connect to the server. Please restart it.');
+            }
+        }
+
+        async function fetchUpcomingReminder() {
+            try {
+                const res = await fetch('/reminders/upcoming', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    const upcoming = await res.json();
+                    if (upcoming) { renderUpcomingReminder(upcoming); }
+                }
+            } catch (err) { console.error('Error fetching reminder:', err); }
+        }
+
+        function getDynamicCountdownText(dateStr, timeStr) {
+            const now = new Date();
+            const [time, modifier] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':').map(Number);
+            if (modifier === 'PM' && hours < 12) hours += 12;
+            if (modifier === 'AM' && hours === 12) hours = 0;
+            
+            const target = new Date(dateStr);
+            target.setHours(hours, minutes, 0, 0);
+
+            const diffMs = target - now;
+            if (diffMs < 0) return "Appointment missed";
+            
+            const diffHours = diffMs / (1000 * 60 * 60);
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const targetDay = new Date(target);
+            targetDay.setHours(0,0,0,0);
+            const dayDiff = Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
+
+            if (dayDiff === 0) {
+                if (diffHours <= 12) return `In ${Math.max(1, Math.ceil(diffHours))} hours`;
+                return `Today at ${timeStr}`;
+            }
+            if (dayDiff === 1) return `Tomorrow at ${timeStr}`;
+            return `In ${dayDiff} days`;
+        }
+
+        let countdownInterval;
+
+        function renderUpcomingReminder(booking) {
+            const vaccineName = booking.vaccineId ? booking.vaccineId.name : 'Vaccine';
+            const hospitalName = booking.vaccineId ? booking.vaccineId.hospitalName : 'Hospital';
+            const date = new Date(booking.date);
+            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            
+            // Dynamic text
+            const countdownText = getDynamicCountdownText(booking.date, booking.time);
+            const isUrgent = countdownText.includes('hours') || countdownText.includes('missed');
+
+            // Show Toast if very soon
+            const lastToastId = localStorage.getItem('last_reminder_toast_id');
+            if (lastToastId !== booking._id && isUrgent) {
+                setTimeout(() => {
+                    showToast('Upcoming Appointment', `Your ${vaccineName} appointment is ${countdownText.toLowerCase()}`, 'info');
+                    localStorage.setItem('last_reminder_toast_id', booking._id);
+                }, 1500);
+            }
+
+            // Dashboard Card Removed
+
+            // Floating Reminder logic
+            const floatingReminder = document.getElementById('floatingReminder');
+            
+            if (window._dismissed_floating_reminder !== booking._id) {
+                floatingReminder.innerHTML = `
+                    <div class="floating-icon"><span class="material-symbols-outlined">notifications_active</span></div>
+                    <div class="floating-content">
+                        <div class="floating-title">Upcoming Vaccination</div>
+                        <div class="floating-desc">${vaccineName} at ${hospitalName}</div>
+                        <div class="floating-countdown ${isUrgent ? 'urgent' : ''}" id="floatReminderCountdown">${countdownText}</div>
+                    </div>
+                    <button class="floating-close" onclick="dismissFloatingReminder('${booking._id}')">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                `;
+                setTimeout(() => floatingReminder.classList.add('show'), 500);
+            }
+
+            // Clear existing interval
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            // Dynamic UI update loop
+            countdownInterval = setInterval(() => {
+                const newText = getDynamicCountdownText(booking.date, booking.time);
+                const newUrgent = newText.includes('hours') || newText.includes('missed');
+                
+                // Main Count update removed
+
+                const floatCount = document.getElementById('floatReminderCountdown');
+                if (floatCount && floatCount.innerText !== newText) {
+                    floatCount.innerText = newText;
+                    if (newUrgent) floatCount.classList.add('urgent');
+                }
+                
+                // Update bell dropdown if open
+                if (notifDropdown.classList.contains('show')) {
+                    fetchNotifications();
+                }
+            }, 60000); // Check every minute
+        }
+
+        function dismissFloatingReminder(bookingId) {
+            const el = document.getElementById('floatingReminder');
+            el.classList.remove('show');
+            window._dismissed_floating_reminder = bookingId;
+        }
+
+        // Rating dropdown state
         let currentRatingValue = 0;
 
         function toggleRatingDrop() {
@@ -162,6 +468,7 @@
             btn.classList.toggle('open', !open);
         }
 
+        // Set rating filter and reload
         function setRating(value, label, el) {
             currentRatingValue = value;
             document.getElementById('ratingLabel').innerText = label;
@@ -184,6 +491,7 @@
             }
         });
 
+        // Fetch vaccines from API, apply search + rating filters
         async function loadVaccines() {
             const location = (document.getElementById('locationInput')?.value || '').trim();
             try {
@@ -213,6 +521,7 @@
             }
         }
 
+        // Build vaccine cards and insert into grid
         function renderCards(vaccines) {
             const grid = document.getElementById('vaccinesGrid');
             grid.innerHTML = '';
@@ -245,6 +554,10 @@
                 const stockClass = stock > 10 ? 'stock-ok' : 'stock-low';
                 const stockLabel = stock > 10 ? `AVAILABLE (${stock})` : stock > 0 ? `LOW STOCK (${stock})` : 'OUT OF STOCK';
 
+                const doseBadgeHtml = (v.dosesRequired && v.dosesRequired > 1) 
+                    ? `<span style="display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;margin-left:0.5rem;vertical-align:middle;">${v.dosesRequired} Doses</span>`
+                    : '';
+
                 grid.innerHTML += `
                 <div class="vcard">
                     <div class="vcard-top">
@@ -255,7 +568,7 @@
                     </div>
 
                     <div>
-                        <div class="vcard-name">${v.name}</div>
+                        <div class="vcard-name" style="display:flex;align-items:center;">${v.name} ${doseBadgeHtml}</div>
                         <div class="vcard-meta" style="margin-top:0.25rem;">
                             <span class="material-symbols-outlined">local_hospital</span>
                             ${v.hospitalName || 'Unknown Hospital'}
@@ -268,7 +581,7 @@
 
                     <div style="display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0 0.25rem;">
                         <span class="material-symbols-outlined" style="font-size:1.1rem;color:#065f46;">payments</span>
-                        <span style="font-family:'Manrope',sans-serif;font-size:1.25rem;font-weight:800;color:#065f46;">₹${(v.cost || 0).toLocaleString('en-IN')}</span>
+                        <span style="font-family:'Manrope',sans-serif;font-size:1.25rem;font-weight:800;color:#065f46;">â‚¹${(v.cost || 0).toLocaleString('en-IN')}</span>
                         ${v.cost === 0 || !v.cost ? '<span style="font-size:0.72rem;color:#64748b;font-weight:600;">FREE</span>' : ''}
                     </div>
 
@@ -288,7 +601,7 @@
                         <span class="stock-badge ${stockClass}">${stockLabel}</span>
                         <button class="btn btn-blue"
                             style="border-radius:9999px;padding:0.5rem 1.4rem;font-size:0.875rem;"
-                            onclick="bookVaccine('${v._id}', '${v.name.replace(/'/g,"\\'")}', '${(v.hospitalName||'').replace(/'/g,"\\'")}', '${(v.doctorName||'Assigned Staff').replace(/'/g,"\\'")}', ${v.cost || 0})"
+                            onclick="bookVaccine('${v._id}', '${v.name.replace(/'/g, "\\'")}', '${(v.hospitalName || '').replace(/'/g, "\\'")}', '${(v.doctorName || '').replace(/'/g, "\\'")}', ${v.cost || 0}, ${v.dosesRequired || 1})"
                             ${stock === 0 ? 'disabled style="opacity:.5;cursor:not-allowed;border-radius:9999px"' : ''}>
                             Book Now
                         </button>
@@ -300,12 +613,13 @@
                 `Showing ${vaccines.length} result${vaccines.length === 1 ? '' : 's'}`;
         }
 
-        // ── Booking Modal ────────────────────────────────────────────
+        // ── Booking Modal ──
         let bookingVaccineId    = null;
         let bookingHospitalName = null;
         let selectedTime        = null;
 
-        function bookVaccine(vaccineId, vaccineName, hospitalName, doctorName, cost) {
+        // Open booking modal with vaccine info
+        function bookVaccine(vaccineId, vaccineName, hospitalName, doctorName, cost, dosesRequired) {
             const user = JSON.parse(localStorage.getItem('vaxUser'));
             if (!user) { window.location.href = 'index.html'; return; }
 
@@ -313,10 +627,14 @@
             bookingHospitalName = hospitalName;
             selectedTime        = null;
 
-            document.getElementById('bk-name').innerText     = vaccineName;
+            const doseBadgeHtml = (dosesRequired && dosesRequired > 1) 
+                ? `<span style="display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;margin-left:0.5rem;vertical-align:middle;">${dosesRequired} Doses</span>`
+                : '';
+
+            document.getElementById('bk-name').innerHTML     = vaccineName + ' ' + doseBadgeHtml;
             document.getElementById('bk-hospital').innerText = hospitalName || 'Unknown Hospital';
             document.getElementById('bk-doctor').innerText   = doctorName || 'Assigned Staff';
-            document.getElementById('bk-cost').innerText     = (cost && cost > 0) ? '₹' + Number(cost).toLocaleString('en-IN') : 'FREE';
+            document.getElementById('bk-cost').innerText     = (cost && cost > 0) ? 'â‚¹' + Number(cost).toLocaleString('en-IN') : 'FREE';
             document.getElementById('bkDate').value          = '';
             document.getElementById('bk-error').innerText    = '';
             document.getElementById('slot-container').innerHTML =
@@ -329,7 +647,7 @@
             document.getElementById('bookModal').classList.add('hidden');
         }
 
-        // Generate 30-min slots between open and close times
+        // Generate 30-min time slots between open and close times
         function generateSlots(openTime, closeTime) {
             const slots = [];
             const [oh, om] = openTime.split(':').map(Number);
@@ -347,9 +665,10 @@
             return slots;
         }
 
-        // Day abbreviation → timings key
+        // Map JS getDay() to timings keys
         const DAY_KEYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+        // Load available time slots when user picks a date
         async function loadSlots() {
             const date   = document.getElementById('bkDate').value;
             const errEl  = document.getElementById('bk-error');
@@ -362,7 +681,7 @@
                 return;
             }
 
-            box.innerHTML = '<p style="color:#64748b;font-size:.85rem;grid-column:1/-1;">Loading slots…</p>';
+            box.innerHTML = '<p style="color:#64748b;font-size:.85rem;grid-column:1/-1;">Loading slots”¦</p>';
 
             const dayKey = DAY_KEYS[new Date(date + 'T00:00:00').getDay()];
 
@@ -387,7 +706,7 @@
                 return;
             }
             if (timings[dayKey].closed) {
-                box.innerHTML = '<p style="color:#ba1a1a;font-size:.85rem;grid-column:1/-1;">🚫 Hospital is closed on ' + dayKey + '.</p>';
+                box.innerHTML = '<p style="color:#ba1a1a;font-size:.85rem;grid-column:1/-1;">ðŸš« Hospital is closed on ' + dayKey + '.</p>';
                 return;
             }
 
@@ -428,9 +747,10 @@
         function selectTime(el) {
             document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
             el.classList.add('selected');
-            selectedTime = el.innerText.replace('✗','').trim();
+            selectedTime = el.innerText.replace('âœ—','').trim();
         }
 
+        // Submit booking â†’ POST /bookings
         async function confirmBooking() {
             const user = JSON.parse(localStorage.getItem('vaxUser'));
             if (!user) return;
@@ -461,7 +781,10 @@
                 const data = await res.json();
                 if (data.booking) {
                     closeBookModal();
+                    showToast('Booking Confirmed', `Your appointment for ${document.getElementById('bk-name').innerText} is confirmed.`, 'success');
                     loadVaccines();
+                    fetchNotifications();
+                    fetchUpcomingReminder();
                 } else {
                     errEl.innerText = 'Booking failed: ' + (data.message || 'Unknown error');
                 }
@@ -474,10 +797,13 @@
             }
         }
 
+        // Page init: auth check, load vaccines, bind listeners
         document.addEventListener('DOMContentLoaded', async () => {
             if (await checkAuth('patient')) {
                 syncTopNav();
                 loadVaccines();
+                fetchNotifications();
+                fetchUpcomingReminder();
                 document.getElementById('searchInput')?.addEventListener('input', loadVaccines);
                 document.getElementById('locationInput')?.addEventListener('input', loadVaccines);
                 document.getElementById('bkDate')?.addEventListener('change', loadSlots);
@@ -503,7 +829,7 @@
         });
     </script>
 
-    <!-- ======== BOOK APPOINTMENT MODAL ======== -->
+    <!-- Book Appointment Modal -->
     <div id="bookModal" class="overlay hidden">
         <div class="bk-modal">
 
@@ -532,7 +858,7 @@
                 </div>
                 <div class="bk-row">
                     <div class="bk-icon"><span class="material-symbols-outlined">payments</span></div>
-                    <span id="bk-cost" style="font-weight:800;color:#065f46;">₹0</span>
+                    <span id="bk-cost" style="font-weight:800;color:#065f46;">â‚¹0</span>
                 </div>
             </div>
 

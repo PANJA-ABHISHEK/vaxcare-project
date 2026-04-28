@@ -1,6 +1,6 @@
-const bcrypt = require('bcrypt');
+﻿const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
-const User   = require('../../database/models/User');
+const User   = require('../models/User');
 
 // POST /signup
 const signup = async (req, res) => {
@@ -28,7 +28,7 @@ const signup = async (req, res) => {
 
     const token = jwt.sign(
       { userId: newUser._id, role: newUser.role, name: newUser.name },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
@@ -61,7 +61,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, role: user.role, name: user.name },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 

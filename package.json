@@ -1,12 +1,12 @@
-{
+﻿{
   "name": "vaxcare",
   "version": "1.0.0",
-  "description": "VaxCare – Vaccine Booking Platform",
+  "description": "VaxCare ”“ Vaccine Booking Platform",
   "main": "backend/server.js",
   "scripts": {
     "start":     "node backend/server.js",
     "dev":       "node backend/server.js",
-    "seed":      "node database/scripts/seed.js",
+    "seed":      "node backend/scripts/seed.js",
     "structure": "node scripts/show-structure.js"
   },
   "keywords": [],

@@ -72,25 +72,88 @@ function checkAuth(requiredRole) {
   return user;
 }
 
-function syncTopNav() {
+async function syncTopNav() {
   const user = getAuthUser();
   if (!user) return;
-  const nameEl   = document.getElementById('top-nav-name') || document.getElementById('header-name');
-  const avatarEl = document.getElementById('top-nav-avatar') || document.getElementById('header-avatar');
-  
-  if (nameEl) nameEl.innerText = user.name;
-  if (avatarEl) avatarEl.innerText = user.name.charAt(0).toUpperCase();
-}
 
-// Redirect if already logged in (on index.html)
-if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-  const user = getAuthUser();
-  if (user) {
-    window.location.href = user.role === 'hospital' 
-      ? '/hospital-admin-dashboard.html' 
-      : '/patient-dashboard.html';
+  function updateDOM(u) {
+    const nameEl   = document.getElementById('top-nav-name') || document.getElementById('header-name');
+    const initEl   = document.getElementById('header-avatar-init') || document.getElementById('top-nav-init');
+    const imgEl    = document.getElementById('header-avatar-img') || document.getElementById('top-nav-img');
+    const oldAvatar= document.getElementById('top-nav-avatar') || document.getElementById('header-avatar');
+
+    if (nameEl) {
+      if (nameEl.innerText.includes('Welcome back')) {
+        nameEl.innerText = 'Welcome back, ' + u.name.split(' ')[0];
+      } else {
+        nameEl.innerText = u.name;
+      }
+    }
+
+    if (imgEl && initEl) {
+      if (u.profileImage) {
+        imgEl.src = u.profileImage;
+        imgEl.style.display = 'block';
+        initEl.style.display = 'none';
+      } else {
+        initEl.innerText = u.name.charAt(0).toUpperCase();
+        initEl.style.display = 'block';
+        imgEl.style.display = 'none';
+        imgEl.src = '';
+      }
+    } else if (oldAvatar) {
+      oldAvatar.innerText = u.name.charAt(0).toUpperCase();
+    }
+  }
+
+  // 1. Show whatever we have immediately for fast UI
+  updateDOM(user);
+
+  // 2. Fetch fresh data from server quietly (bypasses localStorage 5MB quota for large base64 images)
+  const token = localStorage.getItem('vaxToken');
+  if (token) {
+    try {
+      const res = await fetch('/profile', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) {
+        const freshUser = await res.json();
+        // Try updating localStorage
+        try {
+          const stored = JSON.parse(localStorage.getItem('vaxUser') || '{}');
+          Object.assign(stored, freshUser);
+          localStorage.setItem('vaxUser', JSON.stringify(stored));
+        } catch (_) {
+          try {
+            const stored = JSON.parse(localStorage.getItem('vaxUser') || '{}');
+            Object.assign(stored, freshUser);
+            delete stored.profileImage;
+            localStorage.setItem('vaxUser', JSON.stringify(stored));
+          } catch(e) {}
+        }
+        // Update DOM with fresh image
+        updateDOM(freshUser);
+      }
+    } catch (e) {
+      console.error('Profile sync failed', e);
+    }
   }
 }
+
+// Redirect if already logged in (called by index.html on DOMContentLoaded)
+function redirectIfLoggedIn() {
+  if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+    const user = getAuthUser();
+    if (user) {
+      window.location.href = user.role === 'hospital' 
+        ? '/hospital-admin-dashboard.html' 
+        : '/patient-dashboard.html';
+    }
+  }
+}
+
+// Auto-redirect on script load
+redirectIfLoggedIn();
 
 // Close modal when clicking outside the box
 document.addEventListener('click', function (e) {
