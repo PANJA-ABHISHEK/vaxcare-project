@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VaxCare — My Appointments</title>
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="./css/styles.css"/>
   <!-- interceptor.js: wraps fetch() to auto-inject JWT token on every API call -->
-  <script src="/js/interceptor.js"></script>
-  <!-- auth.js: provides checkAuth(), syncTopNav(), logoutUser() helpers -->
-  <script src="/js/auth.js"></script>
+  <script src="./js/interceptor.js"></script>
+  <!-- script.js: provides checkAuth(), syncTopNav(), logoutUser() helpers -->
+  <script src="./js/script.js"></script>
 </head>
 <body>
 
@@ -21,15 +21,19 @@
       <p>Clinical Portal</p>
     </div>
     <nav class="sidenav">
-      <a class="navlink" href="/patient-dashboard.html">
+      <a class="navlink" href="./patient-dashboard.html">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dashboard</span>
       </a>
-      <a class="navlink active" href="/patient-appointments.html">
+      <a class="navlink active" href="./patient-appointments.html">
         <span class="material-symbols-outlined">calendar_today</span>
         <span>My Appointments</span>
       </a>
-      <a class="navlink" href="/patient-profile.html">
+      <a class="navlink" href="./patient-history.html">
+        <span class="material-symbols-outlined">history</span>
+        <span>Vaccination History</span>
+      </a>
+      <a class="navlink" href="./patient-profile.html">
         <span class="material-symbols-outlined">manage_accounts</span>
         <span>My Profile</span>
       </a>
@@ -66,30 +70,13 @@
     <!-- Page Content -->
     <main class="content">
 
-      <!-- Tab Switcher — toggles between Upcoming and Completed appointment lists.
-           showTab('upcoming') / showTab('completed') swaps visibility + active styles. -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #bfc7d4;">
         <h3 style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;">My Appointments</h3>
-        <div style="display:flex;gap:0.25rem;padding:0.25rem;background:#e9f5ff;border-radius:9999px;">
-          <button id="btnUpcoming" onclick="showTab('upcoming')"
-            style="padding:0.5rem 1.5rem;border-radius:9999px;font-weight:700;font-size:0.875rem;background:#fff;color:#0061a4;box-shadow:0 2px 8px rgba(15,29,37,.06);border:none;cursor:pointer;">
-            Upcoming
-          </button>
-          <button id="btnCompleted" onclick="showTab('completed')"
-            style="padding:0.5rem 1.5rem;border-radius:9999px;font-weight:500;font-size:0.875rem;background:transparent;color:#404752;border:none;cursor:pointer;">
-            Completed
-          </button>
-        </div>
       </div>
 
-      <!-- Upcoming appointments — shows Pending & Accepted bookings with Cancel button -->
-      <div id="upcomingSection">
-        <div id="upcomingContainer" class="appt-list"></div>
-      </div>
-
-      <!-- Completed appointments — shows finished vaccinations with Rate button -->
-      <div id="completedSection" style="display:none;">
-        <div id="completedContainer" class="appt-list"></div>
+      <!-- Active appointments — shows Pending & Accepted bookings with Cancel button -->
+      <div id="activeSection">
+        <div id="activeContainer" class="appt-list"></div>
       </div>
 
     </main>
@@ -108,37 +95,7 @@
   </div>
 </div>
 
-<!-- Rating Popup — 5-star interactive modal.
-     Opens via openRatingModal(bookingId, vaccineName).
-     Stars highlight on hover, lock on click, submit via PUT /bookings/:id -->
-<div id="ratingModal" class="popup-bg hidden">
-  <div class="popup" style="text-align:center;">
-    <button class="popup-close" onclick="closeRatingModal()">
-      <span class="material-symbols-outlined">close</span>
-    </button>
-    <h3 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem;">Rate Your Experience</h3>
-    <p style="color:#404752;margin-bottom:1.5rem;">
-      How was your vaccination for <strong id="ratingVaccineName"></strong>?
-    </p>
-    <div style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1rem;" id="starContainer">
-      <button class="star-btn" data-val="1"
-        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
-      <button class="star-btn" data-val="2"
-        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
-      <button class="star-btn" data-val="3"
-        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
-      <button class="star-btn" data-val="4"
-        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
-      <button class="star-btn" data-val="5"
-        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
-    </div>
-    <p id="ratingMeaning" style="font-size:0.875rem;font-weight:700;color:#ca8a04;height:1.25rem;margin-bottom:1.5rem;"></p>
-    <div style="display:flex;gap:1rem;">
-      <button onclick="closeRatingModal()" class="btn btn-light" style="flex:1;">Cancel</button>
-      <button onclick="submitRating()" class="btn btn-blue" style="flex:1;">Submit</button>
-    </div>
-  </div>
-</div>
+
 
 <script>
     // Month abbreviations for formatting dates in appointment cards
@@ -147,62 +104,28 @@
 
 
 
-
-    // showTab() — switches between 'upcoming' and 'completed' views,
-    // updating button styles to indicate which tab is active
-    function showTab(tab) {
-        const upcoming  = document.getElementById('upcomingSection');
-        const completed = document.getElementById('completedSection');
-        const btnUp = document.getElementById('btnUpcoming');
-        const btnCo = document.getElementById('btnCompleted');
-
-        if (tab === 'upcoming') {
-            upcoming.style.display  = 'block';
-            completed.style.display = 'none';
-            btnUp.style.background  = '#fff';
-            btnUp.style.color       = '#0061a4';
-            btnUp.style.fontWeight  = '700';
-            btnUp.style.boxShadow   = '0 2px 8px rgba(15,29,37,.06)';
-            btnCo.style.background  = 'transparent';
-            btnCo.style.color       = '#404752';
-            btnCo.style.fontWeight  = '500';
-            btnCo.style.boxShadow   = 'none';
-        } else {
-            upcoming.style.display  = 'none';
-            completed.style.display = 'block';
-            btnCo.style.background  = '#fff';
-            btnCo.style.color       = '#0061a4';
-            btnCo.style.fontWeight  = '700';
-            btnCo.style.boxShadow   = '0 2px 8px rgba(15,29,37,.06)';
-            btnUp.style.background  = 'transparent';
-            btnUp.style.color       = '#404752';
-            btnUp.style.fontWeight  = '500';
-            btnUp.style.boxShadow   = 'none';
-        }
-    }
-
     // loadAppointments() — fetches all bookings for the current user from GET /bookings,
     // then splits them into Upcoming (Pending/Accepted) and Completed sections
     async function loadAppointments() {
         const userStr = localStorage.getItem('vaxUser');
-        if (!userStr) { window.location.href = '/index.html'; return; }
+        if (!userStr) { window.location.href = './index.html'; return; }
         const user = JSON.parse(userStr);
 
         try {
             const res = await fetch('/bookings?userId=' + user._id);
             const appointments = await res.json();
 
-            const upcomingEl  = document.getElementById('upcomingContainer');
-            const completedEl = document.getElementById('completedContainer');
-            upcomingEl.innerHTML  = '';
-            completedEl.innerHTML = '';
+            const activeEl = document.getElementById('activeContainer');
+            activeEl.innerHTML = '';
 
             appointments.forEach(apt => {
                 const aptDate = new Date(apt.date);
                 const mName   = isNaN(aptDate) ? 'Unknown' : monthNames[aptDate.getMonth()];
                 const dNum    = isNaN(aptDate) ? '--' : aptDate.getDate();
+                const yr      = isNaN(aptDate) ? '----' : aptDate.getFullYear();
                 const vaxName = apt.vaccineId ? apt.vaccineId.name : 'Vaccine';
                 const locName = apt.vaccineId ? apt.vaccineId.hospitalName : 'Unknown Hospital';
+                const docName = apt.vaccineId ? (apt.vaccineId.doctorName || 'Staff') : 'Staff';
                 const status  = (apt.status || '').toLowerCase();
 
                 if (status === 'pending' || status === 'accepted') {
@@ -216,7 +139,7 @@
                         ? `<span style="display:inline-block;padding:.1rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;margin-left:0.5rem;vertical-align:middle;">Dose ${doseN} of ${totalD}</span>`
                         : '';
 
-                    upcomingEl.innerHTML += `
+                    activeEl.innerHTML += `
                     <div class="appt">
                         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f1f5f9;border-radius:1rem;padding:1rem 1.25rem;min-width:80px;text-align:center;">
                             <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#0061a4;">${mName}</span>
@@ -227,47 +150,19 @@
                             <h4 style="display:flex;align-items:center;">${vaxName} ${doseBadge}</h4>
                             <p>${locName} · ${apt.time || 'TBD'}</p>
                         </div>
-                        <div class="appt-acts">
+                        <div class="appt-acts" style="display:flex;gap:0.5rem;align-items:center;">
                             <button onclick="cancelAppointment('${apt._id}')" class="btn btn-red btn-sm">Cancel</button>
                         </div>
-                    </div>`;
-                } else if (status === 'completed') {
-                    const ratingHtml = apt.rating
-                        ? `<span style="color:#ca8a04;font-weight:700;">Rated ${'★'.repeat(apt.rating)}</span>`
-                        : `<button onclick="openRatingModal('${apt._id}','${vaxName}')" class="btn btn-light btn-sm">Rate</button>`;
-
-                    const totalD = apt.totalDoses > 1 ? apt.totalDoses : (apt.vaccineId?.dosesRequired || 1);
-                    const doseN  = apt.doseNumber || 1;
-                    const doseBadge = totalD > 1 
-                        ? `<span style="display:inline-block;padding:.1rem .5rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#f3f4f6;color:#4b5563;margin-left:0.5rem;vertical-align:middle;">Dose ${doseN} of ${totalD}</span>`
-                        : '';
-
-                    completedEl.innerHTML += `
-                    <div class="appt">
-                        <span class="material-symbols-outlined" style="font-size:2rem;color:#bfc7d4;flex-shrink:0;" title="Completed">check_circle</span>
-                        <div class="appt-info">
-                            <h4 style="display:flex;align-items:center;">${vaxName} ${doseBadge}</h4>
-                            <p>Completed ${mName} ${dNum} · ${locName}</p>
-                        </div>
-                        <div class="appt-acts">${ratingHtml}</div>
                     </div>`;
                 }
             });
 
-            if (!upcomingEl.innerHTML) {
-                upcomingEl.innerHTML = `
+            if (!activeEl.innerHTML) {
+                activeEl.innerHTML = `
                 <div class="empty">
                     <span class="material-symbols-outlined">event_busy</span>
-                    <p>No upcoming appointments</p>
-                    <small>Book a vaccine from the patient dashboard.</small>
-                </div>`;
-            }
-            if (!completedEl.innerHTML) {
-                completedEl.innerHTML = `
-                <div class="empty">
-                    <span class="material-symbols-outlined">history_toggle_off</span>
-                    <p>No completed appointments</p>
-                    <small>Your past vaccination records will appear here.</small>
+                    <p>No active appointments found</p>
+                    <small>Book a vaccine from the dashboard to see it here.</small>
                 </div>`;
             }
         } catch (e) { console.error(e); }
@@ -286,65 +181,11 @@
         } catch (e) { console.error(e); }
     }
 
-    // ── Rating Popup State ──
-    // currentRatingId: the booking ID being rated
-    // currentSelectedRating: the star value (1—5) the user clicked
-    let currentRatingId = null, currentSelectedRating = 0;
-
-    // openRatingModal() — opens the rating popup for a specific completed booking
-    function openRatingModal(id, name) {
-        currentRatingId = id;
-        currentSelectedRating = 0;
-        document.getElementById('ratingVaccineName').innerText = name;
-        document.getElementById('ratingMeaning').innerText = '';
-        updateStars(0);
-        document.getElementById('ratingModal').classList.remove('hidden');
-    }
-
-    function closeRatingModal() {
-        document.getElementById('ratingModal').classList.add('hidden');
-    }
-
-    // updateStars() — fills star icons up to 'val' (used for hover preview + click lock)
-    function updateStars(val) {
-        document.querySelectorAll('.star-btn').forEach(btn => {
-            const v = parseInt(btn.dataset.val);
-            btn.style.color = v <= val && val > 0 ? '#ca8a04' : '#bfc7d4';
-            btn.style.fontVariationSettings = v <= val ? "'FILL' 1" : "'FILL' 0";
-        });
-    }
-
-    // submitRating() — sends the selected rating to PUT /bookings/:id { rating: N }.
-    // The backend updates both booking.rating and vaccine.rating (running average).
-    async function submitRating() {
-        if (!currentSelectedRating) { alert('Please select a rating.'); return; }
-        try {
-            await fetch('/bookings/' + currentRatingId, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rating: currentSelectedRating })
-            });
-            closeRatingModal();
-            loadAppointments();
-        } catch (e) { console.error(e); }
-    }
-
-    // DOMContentLoaded — entry point: verify auth, populate UI, and load data
+    // DOMContentLoaded — entry point
     document.addEventListener('DOMContentLoaded', async () => {
         if (!await checkAuth('patient')) return;
         syncTopNav();
         loadAppointments();
-
-        const meanings = ['Very Bad', 'Bad', 'Average', 'Good', 'Excellent'];
-        document.querySelectorAll('.star-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentSelectedRating = parseInt(btn.dataset.val);
-                updateStars(currentSelectedRating);
-                document.getElementById('ratingMeaning').innerText = meanings[currentSelectedRating - 1];
-            });
-            btn.addEventListener('mouseenter', () => updateStars(parseInt(btn.dataset.val)));
-            btn.addEventListener('mouseleave', () => updateStars(currentSelectedRating));
-        });
     });
 </script>
 </body>

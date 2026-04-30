@@ -54,19 +54,19 @@ function getAuthUser() {
 function logoutUser() {
   localStorage.removeItem('vaxUser');
   localStorage.removeItem('vaxToken');
-  window.location.href = '/index.html';
+  window.location.href = './index.html';
 }
 
 function checkAuth(requiredRole) {
   const user = getAuthUser();
   if (!user) {
-    window.location.href = '/index.html';
+    window.location.href = './index.html';
     return null;
   }
   if (requiredRole && user.role !== requiredRole) {
     window.location.href = user.role === 'hospital' 
-      ? '/hospital-admin-dashboard.html' 
-      : '/patient-dashboard.html';
+      ? './hospital-admin-dashboard.html' 
+      : './patient-dashboard.html';
     return null;
   }
   return user;
@@ -112,8 +112,12 @@ async function syncTopNav() {
   // 2. Fetch fresh data from server quietly (bypasses localStorage 5MB quota for large base64 images)
   const token = localStorage.getItem('vaxToken');
   if (token) {
+    const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "https://vaxcare-project.onrender.com";
+
     try {
-      const res = await fetch('/profile', {
+      const res = await fetch(`${BASE_URL}/profile`, {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       if (res.ok) {
@@ -142,12 +146,12 @@ async function syncTopNav() {
 
 // Redirect if already logged in (called by index.html on DOMContentLoaded)
 function redirectIfLoggedIn() {
-  if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
     const user = getAuthUser();
     if (user) {
       window.location.href = user.role === 'hospital' 
-        ? '/hospital-admin-dashboard.html' 
-        : '/patient-dashboard.html';
+        ? './hospital-admin-dashboard.html' 
+        : './patient-dashboard.html';
     }
   }
 }
@@ -221,8 +225,12 @@ async function handleAuthSubmit(event, type) {
 
   const errorEl = document.getElementById(type === 'login' ? 'loginError' : 'signupError');
 
+  const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://vaxcare-project.onrender.com";
+
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
@@ -233,8 +241,8 @@ async function handleAuthSubmit(event, type) {
       localStorage.setItem('vaxUser', JSON.stringify(data.user || data));
       if (data.token) localStorage.setItem('vaxToken', data.token);
       window.location.href = role === 'hospital'
-        ? '/hospital-admin-dashboard.html'
-        : '/patient-dashboard.html';
+        ? './hospital-admin-dashboard.html'
+        : './patient-dashboard.html';
     } else {
       if (errorEl) {
         errorEl.innerText = data.message || data.error || 'Authentication failed';

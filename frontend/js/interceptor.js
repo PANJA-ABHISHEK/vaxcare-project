@@ -4,6 +4,15 @@
     window.fetch = async function(...args) {
         let [url, config] = args;
         
+        const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" 
+            ? "http://localhost:5000" 
+            : "https://vaxcare-project.onrender.com";
+
+        if (typeof url === 'string' && url.startsWith('/')) {
+            url = BASE_URL + url;
+            args[0] = url;
+        }
+
         // Ensure headers object exists
         config = config || {};
         config.headers = config.headers || {};
@@ -28,7 +37,7 @@
                 localStorage.removeItem('vaxUser');
                 localStorage.removeItem('vaxToken');
                 if (window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
-                    window.location.href = '/index.html';
+                    window.location.href = './index.html';
                 }
             }
 

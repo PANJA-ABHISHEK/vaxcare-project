@@ -1,4 +1,4 @@
-﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
@@ -18,7 +18,10 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 // ── Global Middleware ───────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: ["http://127.0.0.1:5500", "http://localhost:5500", "https://vaxcare-project.vercel.app"],
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -31,8 +34,8 @@ app.use('/',          authRoutes);
 app.use('/vaccines',  vaccineRoutes);
 app.use('/bookings',  bookingRoutes);
 app.use('/hospitals', hospitalRoutes);
-app.use('/profile',  profileRoutes);
-app.use('/', notificationRoutes);
+app.use('/profile',   profileRoutes);
+app.use('/',          notificationRoutes);
 
 // ── Start Server ────────────────────────────────────────────────
 app.listen(PORT, () => {

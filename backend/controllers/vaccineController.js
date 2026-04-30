@@ -1,4 +1,4 @@
-﻿const Vaccine = require('../models/Vaccine');
+const Vaccine = require('../models/Vaccine');
 const Booking = require('../models/Booking');
 const User    = require('../models/User');
 
@@ -61,15 +61,24 @@ const addVaccine = async (req, res) => {
 // PUT /vaccines/:id
 const updateVaccine = async (req, res) => {
   try {
-    const { stockIncrement, stock } = req.body;
+    const { stockIncrement, stock, name, doctorName, experience, cost, dosesRequired, daysBetweenDoses } = req.body;
     const vaccine = await Vaccine.findById(req.params.id);
     if (!vaccine) return res.status(404).json({ message: 'Vaccine not found' });
 
+    // Stock updates (legacy shortcut)
     if (stockIncrement !== undefined) {
       vaccine.stock += parseInt(stockIncrement);
     } else if (stock !== undefined) {
-      vaccine.stock = stock;
+      vaccine.stock = parseInt(stock);
     }
+
+    // Full-field edits
+    if (name !== undefined)             vaccine.name             = name;
+    if (doctorName !== undefined)       vaccine.doctorName       = doctorName;
+    if (experience !== undefined)       vaccine.experience       = experience;
+    if (cost !== undefined)             vaccine.cost             = parseFloat(cost);
+    if (dosesRequired !== undefined)    vaccine.dosesRequired    = parseInt(dosesRequired);
+    if (daysBetweenDoses !== undefined) vaccine.daysBetweenDoses = parseInt(daysBetweenDoses);
 
     await vaccine.save();
     res.status(200).json({ message: 'Vaccine updated', vaccine });

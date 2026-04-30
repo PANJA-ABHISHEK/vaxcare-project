@@ -1,16 +1,35 @@
-﻿const Booking = require('../models/Booking');
+const Booking = require('../models/Booking');
 const Vaccine = require('../models/Vaccine');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 // GET /bookings
 const getBookings = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, vaccineId } = req.query;
     let query = {};
     if (userId) query.userId = userId;
+    if (vaccineId) query.vaccineId = vaccineId;
 
     const bookings = await Booking.find(query).populate('userId').populate('vaccineId');
-    res.status(200).json(bookings);
+
+    // Enrich with hospital details (governmentId, etc.) based on vaccineId.hospitalName
+    const enrichedBookings = await Promise.all(bookings.map(async (b) => {
+      const obj = b.toObject();
+      if (obj.vaccineId && obj.vaccineId.hospitalName) {
+        const hospital = await User.findOne({ name: obj.vaccineId.hospitalName, role: 'hospital' }, { password: 0 });
+        if (hospital) {
+          obj.hospitalDetails = {
+            governmentId: hospital.governmentId || 'N/A',
+            location: hospital.location || 'N/A',
+            address: hospital.address || 'N/A'
+          };
+        }
+      }
+      return obj;
+    }));
+
+    res.status(200).json(enrichedBookings);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -148,6 +167,7 @@ const updateBooking = async (req, res) => {
 
     if (rating) {
       booking.rating = rating;
+      if (req.body.review) booking.review = req.body.review;
       const vaccine = await Vaccine.findById(booking.vaccineId);
       if (vaccine) {
         vaccine.rating = (!vaccine.rating || vaccine.rating === 0)

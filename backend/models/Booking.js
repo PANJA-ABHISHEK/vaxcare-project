@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
   userId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User',    required: true },
@@ -7,6 +7,7 @@ const bookingSchema = new mongoose.Schema({
   time:      { type: String, required: true },
   status:    { type: String, default: 'Pending' },
   rating:    { type: Number },
+  review:    { type: String },
   doseNumber:{ type: Number, default: 1 },
   totalDoses:{ type: Number, default: 1 }
 });

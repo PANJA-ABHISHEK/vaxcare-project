@@ -1,18 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VaxCare | Hospital Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="./css/styles.css"/>
   <style>
     /* Admin-specific layout overrides */
     .admin-wrap   { display: flex; min-height: 100vh; }
-    .admin-side   { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; display: flex; flex-direction: column; background: #f1f5f9; z-index: 50; }
+    .admin-side   { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; z-index: 50; }
     .admin-body   { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-    .admin-top    { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; background: #f8fafc; border-bottom: 1px solid #dbeaf5; position: sticky; top: 0; z-index: 40; }
-    .page-sec              { display: none; }
-    .page-sec.active       { display: block; }
+    .admin-top    { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; background: rgba(248,250,252,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(219,234,245,0.5); position: sticky; top: 0; z-index: 40; }
+    .page-sec              { display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease-out; }
+    .page-sec.active       { display: block; opacity: 1; transform: translateY(0); }
     .booking-grid          { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
     .vax-layout            { display: grid; grid-template-columns: 400px 1fr; gap: 2rem; align-items: start; }
     .vax-layout > *        { min-width: 0; overflow: hidden; }
@@ -25,8 +25,29 @@
     .btn-reject            { background: #fee2e2; color: #991b1b; }
     .btn-complete          { background: #0061a4; color: #fff; }
     .btn-stock             { background: #dbeafe; color: #1e40af; padding: .25rem .75rem; border-radius: 0.5rem; font-size: .75rem; font-weight: 700; border: none; cursor: pointer; }
+    .btn-edit              { background: none; border: none; cursor: pointer; color: #0061a4; padding: .25rem; border-radius: 9999px; transition: background .15s; }
+    .btn-edit:hover        { background: #dbeafe; }
     .btn-del               { background: none; border: none; cursor: pointer; color: #ba1a1a; padding: .25rem; border-radius: 9999px; }
     .btn-del:hover         { background: #ffdad6; }
+
+    /* Edit Modal */
+    .edit-overlay          { position: fixed; inset: 0; background: rgba(15,29,37,.5); backdrop-filter: blur(6px); z-index: 600; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .edit-overlay.hidden   { display: none; }
+    .edit-modal            { background: #fff; border-radius: 1.5rem; padding: 2.5rem; width: 100%; max-width: 480px; box-shadow: 0 20px 48px -8px rgba(15,29,37,.12); position: relative; animation: editSlideIn .25s ease-out; }
+    @keyframes editSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .edit-modal h3         { font-family: 'Manrope', sans-serif; font-size: 1.15rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f1d25; display: flex; align-items: center; gap: .5rem; }
+    .edit-modal .field     { margin-bottom: 1rem; }
+    .edit-modal label      { font-size: .8rem; font-weight: 700; color: #404752; display: block; margin-bottom: .35rem; }
+    .edit-modal input      { width: 100%; padding: .75rem 1rem; background: #e9f5ff; border: 1.5px solid transparent; border-radius: .75rem; font-size: .9rem; color: #0f1d25; outline: none; transition: border-color .2s, background .2s; box-sizing: border-box; }
+    .edit-modal input:focus { border-color: #0061a4; background: #fff; }
+    .edit-modal .edit-actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+    .edit-modal .edit-actions button { flex: 1; padding: .75rem; border-radius: 9999px; font-family: 'Manrope', sans-serif; font-size: .9rem; font-weight: 700; border: none; cursor: pointer; transition: all .15s; }
+    .edit-modal .btn-save  { background: linear-gradient(135deg, #0061a4, #00a8ff); color: #fff; box-shadow: 0 4px 15px rgba(0,97,164,.3); }
+    .edit-modal .btn-save:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,97,164,.4); }
+    .edit-modal .btn-cancel { background: #f1f5f9; color: #404752; }
+    .edit-modal .btn-cancel:hover { background: #e2e8f0; }
+    .edit-close            { position: absolute; top: 1.25rem; right: 1.25rem; width: 36px; height: 36px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: #404752; cursor: pointer; background: none; border: none; transition: background .2s; }
+    .edit-close:hover      { background: #dbeaf5; }
     .two-col               { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .two-col .field        { min-width: 0; }
     .two-col input         { width: 100%; box-sizing: border-box; }
@@ -40,8 +61,8 @@
     .closed-lbl input      { accent-color: #ba1a1a; width: .85rem; height: .85rem; cursor: pointer; flex-shrink: 0; }
     .panel-sub             { font-size: .8rem; color: #64748b; margin-top: .15rem; margin-bottom: .1rem; }
   </style>
-  <script src="/js/interceptor.js"></script>
-  <script src="/js/auth.js"></script>
+  <script src="./js/interceptor.js"></script>
+  <script src="./js/script.js"></script>
 </head>
 <body>
 
@@ -66,7 +87,15 @@
         <span class="material-symbols-outlined">vaccines</span>
         <span>Vaccines</span>
       </a>
-      <a href="/hospital-profile.html" class="navlink" data-target="profile">
+      <a href="#" onclick="switchSection('history')" class="navlink" data-target="history">
+        <span class="material-symbols-outlined">history</span>
+        <span>History</span>
+      </a>
+      <a href="#" onclick="switchSection('reviews')" class="navlink" data-target="reviews">
+        <span class="material-symbols-outlined">rate_review</span>
+        <span>Reviews</span>
+      </a>
+      <a href="./hospital-profile.html" class="navlink" data-target="profile">
         <span class="material-symbols-outlined">manage_accounts</span>
         <span>Profile</span>
       </a>
@@ -104,11 +133,12 @@
       <!-- DASHBOARD SECTION -->
       <section id="dashboard" class="page-sec active">
         <div class="stats" style="margin-bottom:2rem;">
-          <div class="stat" onclick="switchSection('bookings')" style="cursor:pointer;">
-            <div class="stat-label">Total Bookings</div>
+          <div class="stat" onclick="switchSection('history')" style="cursor:pointer; background: #fff; border: 1px solid #e2e8f0;">
+            <div class="stat-label" style="color: #64748b;">Total Bookings</div>
+            <div class="panel-sub" style="color:#94a3b8;font-size:0.7rem;margin-top:-0.2rem;">(Completed + Active)</div>
             <div style="display:flex;align-items:flex-end;gap:1rem;margin-top:.5rem;">
-              <div class="stat-value" id="stat-total-bookings">0</div>
-              <span class="material-symbols-outlined" style="color:#0061a4;font-size:1.75rem;margin-bottom:.25rem;">book_online</span>
+              <div class="stat-value" id="stat-total-bookings" style="color: #0f1d25;">0</div>
+              <span class="material-symbols-outlined" style="color:#0061a4;font-size:1.75rem;margin-bottom:.25rem;">history_edu</span>
             </div>
           </div>
           <div class="stat" onclick="switchSection('vaccines')" style="cursor:pointer;">
@@ -149,19 +179,7 @@
 
       <!-- BOOKINGS SECTION -->
       <section id="bookings" class="page-sec">
-        <div style="display:flex;gap:0.25rem;padding:.25rem;background:#e9f5ff;border-radius:9999px;width:fit-content;margin-bottom:1.5rem;">
-          <button id="tab-pending" onclick="switchBookingTab('pending-bookings')"
-            style="padding:.45rem 1.25rem;border-radius:9999px;font-weight:700;font-size:.875rem;background:#fff;color:#0061a4;box-shadow:0 2px 8px rgba(15,29,37,.06);border:none;cursor:pointer;">
-            Pending
-          </button>
-          <button id="tab-completed" onclick="switchBookingTab('completed-bookings')"
-            style="padding:.45rem 1.25rem;border-radius:9999px;font-weight:500;font-size:.875rem;background:transparent;color:#404752;box-shadow:none;border:none;cursor:pointer;">
-            Completed
-          </button>
-        </div>
-
         <div id="pending-bookings" class="booking-grid"></div>
-        <div id="completed-bookings" class="booking-grid" style="display:none;"></div>
       </section>
 
       <section id="vaccines" class="page-sec">
@@ -259,6 +277,90 @@
         </div>
       </section>
 
+      <!-- REVIEWS SECTION -->
+      <section id="reviews" class="page-sec">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <h3 style="font-family:'Manrope',sans-serif;font-size:1.3rem;font-weight:800;color:#0f1d25;">Patient Reviews & Ratings</h3>
+            <p style="font-size:0.85rem;color:#64748b;margin-top:0.25rem;">Feedback from patients who completed vaccinations at your hospital</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div id="avg-rating-badge" style="background:linear-gradient(135deg,#fef9c3,#fffbeb);border:1px solid rgba(202,138,4,0.2);padding:0.5rem 1.25rem;border-radius:9999px;display:flex;align-items:center;gap:0.4rem;">
+              <span class="material-symbols-outlined" style="color:#ca8a04;font-size:1.2rem;font-variation-settings:'FILL' 1;">star</span>
+              <span id="avg-rating-value" style="font-family:'Manrope',sans-serif;font-size:1.1rem;font-weight:800;color:#854d0e;">--</span>
+              <span style="font-size:0.75rem;color:#92400e;font-weight:600;">avg</span>
+            </div>
+            <span id="review-count" style="font-size:0.85rem;color:#64748b;font-weight:600;"></span>
+          </div>
+        </div>
+        <div id="reviews-list" style="display:flex;flex-direction:column;gap:1rem;"></div>
+      </section>
+
+      <!-- HISTORY SECTION -->
+      <section id="history" class="page-sec">
+        <div style="margin-bottom:2rem; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h3 style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;color:#0f1d25;">Vaccination History</h3>
+            <p style="font-size:0.9rem;color:#64748b;margin-top:0.25rem;">Comprehensive record of all completed vaccinations at this facility</p>
+          </div>
+          <div style="background: #e9f5ff; padding: 0.5rem 1rem; border-radius: 0.75rem; border: 1px solid #dbeafe;">
+            <span id="history-count" style="font-weight: 800; color: #0061a4;">0</span> 
+            <span style="font-size: 0.8rem; color: #404752; font-weight: 600;">Records Found</span>
+          </div>
+        </div>
+        
+        <div id="history-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- History items will be injected here as "slides" -->
+        </div>
+      </section>
+
+      <!-- EDIT VACCINE MODAL -->
+      <div id="edit-vaccine-overlay" class="edit-overlay hidden" onclick="if(event.target===this)closeEditModal()">
+        <div class="edit-modal">
+          <button class="edit-close" onclick="closeEditModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <h3><span class="material-symbols-outlined" style="color:#0061a4;">edit</span> Edit Vaccine</h3>
+          <input type="hidden" id="edit-vax-id"/>
+          <div class="field">
+            <label>Vaccine Name</label>
+            <input id="edit-vax-name" type="text"/>
+          </div>
+          <div class="field">
+            <label>Doctor Name</label>
+            <input id="edit-vax-doctor" type="text"/>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Experience (Yrs)</label>
+              <input id="edit-vax-exp" type="number" min="0"/>
+            </div>
+            <div class="field">
+              <label>Stock</label>
+              <input id="edit-vax-stock" type="number" min="0"/>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Cost (₹)</label>
+              <input id="edit-vax-cost" type="number" min="0" step="0.01"/>
+            </div>
+            <div class="field">
+              <label>Total Doses</label>
+              <input id="edit-vax-doses" type="number" min="1"/>
+            </div>
+          </div>
+          <div class="field" id="edit-wrap-days" style="display:none;">
+            <label>Days Between Doses</label>
+            <input id="edit-vax-days" type="number" min="0"/>
+          </div>
+          <div class="edit-actions">
+            <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+            <button class="btn-save" onclick="saveEditVaccine()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Footer -->
@@ -271,7 +373,7 @@
 </div>
 
 <script>
-    // Logic moved to centralised auth.js
+    // Logic moved to centralised script.js
 
     async function loadAdminData() {
         const userStr = localStorage.getItem('vaxUser');
@@ -292,9 +394,12 @@
             const inventory    = globalInventory.filter(v => v.hospitalName === currentHospitalName);
             const appointments = globalAppointments.filter(a => a.vaccineId && a.vaccineId.hospitalName === currentHospitalName);
 
-            document.getElementById('stat-total-bookings').innerText  = appointments.length;
-            document.getElementById('stat-avail-vaccines').innerText  = inventory.reduce((s, v) => s + (v.stock || 0), 0);
             const pending = appointments.filter(a => ['pending','accepted'].includes((a.status||'').toLowerCase()));
+            const completed = appointments.filter(a => (a.status||'').toLowerCase() === 'completed');
+            
+            // Total Bookings = In-progress (pending/accepted) + Completed
+            document.getElementById('stat-total-bookings').innerText  = pending.length + completed.length;
+            document.getElementById('stat-avail-vaccines').innerText  = inventory.reduce((s, v) => s + (v.stock || 0), 0);
             document.getElementById('stat-today-appts').innerText     = pending.length;
 
             const todayObj = new Date();
@@ -334,12 +439,10 @@
             }
 
             const pendingEl   = document.getElementById('pending-bookings');
-            const completedEl = document.getElementById('completed-bookings');
             pendingEl.innerHTML   = '';
-            completedEl.innerHTML = '';
 
             const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-            let pCount = 0, cCount = 0;
+            let pCount = 0;
 
             appointments.forEach(apt => {
                 const aptDate = new Date(apt.date);
@@ -351,67 +454,49 @@
                 const ptGender = (apt.userId && apt.userId.gender) ? apt.userId.gender : 'N/A';
                 const status  = (apt.status || '').toLowerCase();
 
+                // Only show Pending or Accepted in the "Active Bookings" section
                 if (status === 'pending' || status === 'accepted') {
                     pCount++;
                     const statusBadge = status === 'accepted'
-                        ? `<span class="badge badge-accepted">${apt.status}</span>`
-                        : `<span class="badge badge-pending">${apt.status}</span>`;
-                    const acceptBtn = status === 'pending'
-                        ? `<button class="btn-accept" onclick="updateBooking('${apt._id}','Accepted')">Accept</button>`
-                        : '';
+                        ? `<span class="badge badge-accepted" style="background:#dbeafe; color:#1e40af;">Confirmed</span>`
+                        : `<span class="badge badge-pending">Awaiting Approval</span>`;
+                    
+                    const actionButtons = status === 'pending'
+                        ? `<button class="btn-accept" onclick="updateBooking('${apt._id}','Accepted')">Approve Appointment</button>`
+                        : `<button class="btn-complete" onclick="updateBooking('${apt._id}','Completed')">Mark as Completed</button>`;
 
                     pendingEl.innerHTML += `
-                        <div class="card" style="display:flex;flex-direction:column;">
+                        <div class="card" style="display:flex;flex-direction:column; border-left: 4px solid ${status === 'accepted' ? '#0061a4' : '#fbbf24'};">
                             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
                                 <div>
-                                    <h4 style="font-size:1rem;display:flex;align-items:center;gap:.3rem;">
+                                    <h4 style="font-size:1rem;display:flex;align-items:center;gap:.3rem; color: #0f1d25;">
                                         <span class="material-symbols-outlined" style="font-size:1.1rem;color:#0061a4;">person</span>
-                                        Patient: ${ptName} (${ptAge !== 'N/A' ? ptAge + 'y' : 'N/A'}, ${ptGender})
+                                        ${ptName}
                                     </h4>
-                                    <p style="font-size:.875rem;color:#404752;display:flex;align-items:center;gap:.3rem;">
-                                        <span class="material-symbols-outlined" style="font-size:1rem;">vaccines</span>${vaxName}
+                                    <p style="font-size:.75rem; color:#64748b; margin-left: 1.4rem;">${ptAge !== 'N/A' ? ptAge + 'y' : 'Age N/A'} · ${ptGender}</p>
+                                    <p style="font-size:.875rem;color:#404752;display:flex;align-items:center;gap:.3rem; margin-top: 0.5rem;">
+                                        <span class="material-symbols-outlined" style="font-size:1rem; color: #0061a4;">vaccines</span>
+                                        <span style="font-weight: 700;">${vaxName}</span>
                                         ${(apt.totalDoses > 1 || (apt.vaccineId && apt.vaccineId.dosesRequired > 1)) ? `<span style="display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#e9f5ff;color:#0061a4;vertical-align:middle;">Dose ${apt.doseNumber || 1}/${apt.totalDoses > 1 ? apt.totalDoses : apt.vaccineId.dosesRequired}</span>` : ''}
                                     </p>
                                 </div>
                                 ${statusBadge}
                             </div>
-                            <p style="font-size:.875rem;color:#404752;display:flex;align-items:center;gap:.4rem;margin-bottom:1rem;">
-                                <span class="material-symbols-outlined" style="font-size:1rem;">calendar_today</span>
-                                ${mName} ${dNum} · ${apt.time || 'TBD'}
-                            </p>
+                            <div style="background: #f8fafc; padding: 0.75rem; border-radius: 0.75rem; margin-bottom: 1rem;">
+                                <p style="font-size:.875rem;color:#0f1d25;display:flex;align-items:center;gap:.4rem; font-weight: 600;">
+                                    <span class="material-symbols-outlined" style="font-size:1.1rem; color: #64748b;">event</span>
+                                    ${mName} ${dNum} · ${apt.time || 'TBD'}
+                                </p>
+                            </div>
                             <div class="act-row">
-                                ${acceptBtn}
-                                <button class="btn-reject"  onclick="updateBooking('${apt._id}','Rejected')">Reject</button>
-                                <button class="btn-complete" onclick="updateBooking('${apt._id}','Completed')">Complete</button>
+                                ${actionButtons}
+                                <button class="btn-reject" style="flex: 0.4;" onclick="updateBooking('${apt._id}','Rejected')">Reject</button>
                             </div>
-                        </div>`;
-                } else if (status === 'completed') {
-                    cCount++;
-                    completedEl.innerHTML += `
-                        <div class="card" style="opacity:.85;">
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
-                                <div>
-                                    <h4 style="font-size:1rem;display:flex;align-items:center;gap:.3rem;">
-                                        <span class="material-symbols-outlined" style="font-size:1.1rem;color:#0061a4;">person</span>
-                                        Patient: ${ptName} (${ptAge !== 'N/A' ? ptAge + 'y' : 'N/A'}, ${ptGender})
-                                    </h4>
-                                    <p style="font-size:.875rem;color:#404752;">
-                                        <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">vaccines</span> ${vaxName}
-                                        ${(apt.totalDoses > 1 || (apt.vaccineId && apt.vaccineId.dosesRequired > 1)) ? `<span style="display:inline-block;padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase;background:#f3f4f6;color:#4b5563;vertical-align:middle;">Dose ${apt.doseNumber || 1}/${apt.totalDoses > 1 ? apt.totalDoses : apt.vaccineId.dosesRequired}</span>` : ''}
-                                    </p>
-                                </div>
-                                <span class="badge badge-completed">Completed</span>
-                            </div>
-                            <p style="font-size:.875rem;color:#404752;">
-                                <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle;">calendar_today</span>
-                                ${mName} ${dNum} · ${apt.time || 'TBD'}
-                            </p>
                         </div>`;
                 }
             });
 
-            if (pCount === 0) pendingEl.innerHTML   = emptyBox('hourglass_empty','No pending bookings');
-            if (cCount === 0) completedEl.innerHTML = emptyBox('task_alt','No completed bookings');
+            if (pCount === 0) pendingEl.innerHTML = emptyBox('hourglass_empty','No pending bookings');
 
             const vaxList = document.getElementById('vaccine-inventory-list');
             vaxList.innerHTML = '';
@@ -429,7 +514,10 @@
                             <td style="font-weight:700;color:#065f46;">₹${(vax.cost || 0).toLocaleString('en-IN')}</td>
                             <td>${stockBadge}</td>
                             <td style="text-align:right;">
-                                <button class="btn-stock" onclick="addStock('${vax._id}',50)">+50 Stock</button>
+                                <button class="btn-stock" onclick="addStock('${vax._id}',10)">+10 Stock</button>
+                                <button class="btn-edit" onclick='openEditModal(${JSON.stringify(vax).replace(/'/g, "&apos;")})'  title="Edit vaccine">
+                                    <span class="material-symbols-outlined" style="font-size:1rem;">edit</span>
+                                </button>
                                 <button class="btn-del" onclick="deleteVaccine('${vax._id}')">
                                     <span class="material-symbols-outlined" style="font-size:1rem;">delete</span>
                                 </button>
@@ -461,6 +549,78 @@
         if (!confirm('Delete this vaccine?')) return;
         await fetch('/vaccines/' + id, { method: 'DELETE' });
         loadAdminData();
+    }
+
+    // ── Edit Vaccine Modal ─────────────────────────────────────
+    function openEditModal(vax) {
+        document.getElementById('edit-vax-id').value     = vax._id;
+        document.getElementById('edit-vax-name').value   = vax.name || '';
+        document.getElementById('edit-vax-doctor').value = vax.doctorName || '';
+        // Parse numeric years from experience string like "5 yrs experience"
+        const expMatch = (vax.experience || '').match(/(\d+)/);
+        document.getElementById('edit-vax-exp').value    = expMatch ? expMatch[1] : '';
+        document.getElementById('edit-vax-stock').value  = vax.stock || 0;
+        document.getElementById('edit-vax-cost').value   = vax.cost || 0;
+        document.getElementById('edit-vax-doses').value  = vax.dosesRequired || 1;
+        document.getElementById('edit-vax-days').value   = vax.daysBetweenDoses || 0;
+        // Show/hide days-between-doses field
+        const doses = vax.dosesRequired || 1;
+        document.getElementById('edit-wrap-days').style.display = doses > 1 ? 'block' : 'none';
+        // Listen for dose changes
+        document.getElementById('edit-vax-doses').onchange = function() {
+            document.getElementById('edit-wrap-days').style.display = this.value > 1 ? 'block' : 'none';
+        };
+        document.getElementById('edit-vaccine-overlay').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-vaccine-overlay').classList.add('hidden');
+    }
+
+    async function saveEditVaccine() {
+        const id     = document.getElementById('edit-vax-id').value;
+        const name   = document.getElementById('edit-vax-name').value.trim();
+        const doctor = document.getElementById('edit-vax-doctor').value.trim();
+        const exp    = document.getElementById('edit-vax-exp').value.trim();
+        const stock  = parseInt(document.getElementById('edit-vax-stock').value) || 0;
+        const cost   = parseFloat(document.getElementById('edit-vax-cost').value);
+        const dosesRequired    = parseInt(document.getElementById('edit-vax-doses').value) || 1;
+        const daysBetweenDoses = parseInt(document.getElementById('edit-vax-days').value)  || 0;
+
+        if (!name)   { alert('Vaccine name is required'); return; }
+        if (!doctor) { alert('Doctor name is required');  return; }
+        if (isNaN(cost) || cost < 0) { alert('Please enter a valid cost'); return; }
+
+        const saveBtn = event.currentTarget;
+        const origText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+
+        try {
+            const res = await fetch('/vaccines/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    doctorName: doctor,
+                    experience: exp ? exp + ' yrs experience' : 'Experienced',
+                    stock,
+                    cost,
+                    dosesRequired,
+                    daysBetweenDoses
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) { alert('Update failed: ' + (data.message || 'Server error')); return; }
+            closeEditModal();
+            loadAdminData();
+        } catch (err) {
+            console.error(err);
+            alert('Could not connect to server.');
+        } finally {
+            saveBtn.textContent = origText;
+            saveBtn.disabled = false;
+        }
     }
 
     async function updateBooking(id, status) {
@@ -519,35 +679,26 @@
     }
 
     function switchSection(id) {
-        const titleMap = { dashboard: 'Dashboard Overview', bookings: 'Bookings', vaccines: 'Vaccine Inventory' };
+        const titleMap = { dashboard: 'Dashboard Overview', bookings: 'Active Bookings', vaccines: 'Vaccine Inventory', history: 'Vaccination History', reviews: 'Patient Reviews' };
         document.getElementById('header-title').innerText = titleMap[id] || id;
-        document.querySelectorAll('.page-sec').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        
+        const sections = document.querySelectorAll('.page-sec');
+        sections.forEach(s => {
+            s.classList.remove('active');
+            s.style.display = 'none';
+        });
+        
+        const activeSec = document.getElementById(id);
+        activeSec.style.display = 'block';
+        // Force reflow for transition
+        void activeSec.offsetWidth;
+        activeSec.classList.add('active');
+        
         document.querySelectorAll('#sidebar-nav .navlink').forEach(item => {
             item.classList.toggle('active', item.dataset.target === id);
         });
-    }
-
-    function switchBookingTab(tabId) {
-        const pendingEl   = document.getElementById('pending-bookings');
-        const completedEl = document.getElementById('completed-bookings');
-        const btnP        = document.getElementById('tab-pending');
-        const btnC        = document.getElementById('tab-completed');
-
-        const active   = { background: '#fff', color: '#0061a4', fontWeight: '700', boxShadow: '0 2px 8px rgba(15,29,37,.06)' };
-        const inactive = { background: 'transparent', color: '#404752', fontWeight: '500', boxShadow: 'none' };
-
-        if (tabId === 'pending-bookings') {
-            pendingEl.style.display   = 'grid';
-            completedEl.style.display = 'none';
-            Object.assign(btnP.style, active);
-            Object.assign(btnC.style, inactive);
-        } else {
-            pendingEl.style.display   = 'none';
-            completedEl.style.display = 'grid';
-            Object.assign(btnC.style, active);
-            Object.assign(btnP.style, inactive);
-        }
+        if (id === 'reviews') loadReviews();
+        if (id === 'history') loadHistory();
     }
 
     // ── Hospital Timings ──────────────────────────────────────────
@@ -626,11 +777,170 @@
         setTimeout(() => { btn.textContent = 'Save Timings'; btn.style.background = ''; }, 2000);
     }
 
+    // ── Load Reviews ──
+    async function loadReviews() {
+        const userStr = localStorage.getItem('vaxUser');
+        const user = userStr ? JSON.parse(userStr) : {};
+        const hospitalName = user.name || '';
+        const reviewsEl = document.getElementById('reviews-list');
+        reviewsEl.innerHTML = '<p style="color:#64748b;text-align:center;padding:2rem;">Loading reviews...</p>';
+
+        try {
+            const res = await fetch('/bookings');
+            const allBookings = await res.json();
+
+            // Filter: completed bookings for this hospital that have a rating
+            const reviewed = allBookings.filter(b =>
+                b.vaccineId && b.vaccineId.hospitalName === hospitalName &&
+                (b.status || '').toLowerCase() === 'completed' &&
+                b.rating && b.rating > 0
+            );
+
+            // Calculate average rating
+            const avgRating = reviewed.length > 0
+                ? (reviewed.reduce((sum, b) => sum + b.rating, 0) / reviewed.length)
+                : 0;
+            document.getElementById('avg-rating-value').textContent = avgRating > 0 ? avgRating.toFixed(1) : '--';
+            document.getElementById('review-count').textContent = reviewed.length + ' review' + (reviewed.length !== 1 ? 's' : '');
+
+            reviewsEl.innerHTML = '';
+
+            if (reviewed.length === 0) {
+                reviewsEl.innerHTML = `
+                    <div style="text-align:center;padding:4rem 2rem;background:#fff;border-radius:1.25rem;box-shadow:0 2px 8px rgba(15,29,37,0.06);">
+                        <div style="width:72px;height:72px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                            <span class="material-symbols-outlined" style="font-size:2.5rem;color:#94a3b8;">rate_review</span>
+                        </div>
+                        <h4 style="font-size:1.1rem;font-weight:700;color:#0f1d25;margin-bottom:0.25rem;">No Reviews Yet</h4>
+                        <p style="color:#64748b;font-size:0.85rem;">Patient reviews will appear here after they rate completed vaccinations.</p>
+                    </div>`;
+                return;
+            }
+
+            // Sort by most recent first
+            reviewed.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            reviewed.forEach(b => {
+                const patientName = b.userId ? b.userId.name : 'Anonymous';
+                const patientInitial = patientName.charAt(0).toUpperCase();
+                const vaccineName = b.vaccineId ? b.vaccineId.name : 'Vaccine';
+                const dateObj = new Date(b.date);
+                const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Unknown';
+                const stars = '★'.repeat(b.rating) + '☆'.repeat(5 - b.rating);
+                const reviewText = b.review || '';
+
+                // Color coding for ratings
+                const ratingColors = { 5: '#059669', 4: '#16a34a', 3: '#ca8a04', 2: '#ea580c', 1: '#dc2626' };
+                const ratingColor = ratingColors[b.rating] || '#64748b';
+                const ratingLabels = { 5: 'Excellent', 4: 'Good', 3: 'Average', 2: 'Below Average', 1: 'Poor' };
+                const ratingLabel = ratingLabels[b.rating] || '';
+
+                reviewsEl.innerHTML += `
+                <div style="background:#fff;border-radius:1.25rem;padding:1.75rem;box-shadow:0 2px 8px rgba(15,29,37,0.06);border:1px solid #e2eaf3;transition:transform 0.2s,box-shadow 0.2s;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0;">${patientInitial}</div>
+                            <div>
+                                <div style="font-weight:700;font-size:0.95rem;color:#0f1d25;">${patientName}</div>
+                                <div style="font-size:0.78rem;color:#64748b;display:flex;align-items:center;gap:0.5rem;">
+                                    <span class="material-symbols-outlined" style="font-size:0.85rem;">vaccines</span>
+                                    ${vaccineName} · ${dateStr}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="color:${ratingColor};font-size:1.1rem;letter-spacing:2px;">${stars}</div>
+                            <div style="font-size:0.72rem;font-weight:700;color:${ratingColor};text-transform:uppercase;letter-spacing:0.05em;">${ratingLabel}</div>
+                        </div>
+                    </div>
+                    ${reviewText ? `<div style="background:#f8fafc;border-radius:0.75rem;padding:1rem 1.25rem;border-left:3px solid ${ratingColor};">
+                        <p style="font-size:0.88rem;color:#404752;line-height:1.6;font-style:italic;">"${reviewText}"</p>
+                    </div>` : '<div style="font-size:0.82rem;color:#94a3b8;font-style:italic;">No written review provided</div>'}
+                </div>`;
+            });
+        } catch (e) {
+            console.error('Error loading reviews:', e);
+            reviewsEl.innerHTML = '<p style="color:#ba1a1a;text-align:center;padding:2rem;">Failed to load reviews.</p>';
+        }
+    }
+
+    async function loadHistory() {
+        const userStr = localStorage.getItem('vaxUser');
+        const currentUser = userStr ? JSON.parse(userStr) : {};
+        const currentHospitalName = currentUser.name;
+        const historyGrid = document.getElementById('history-grid');
+        historyGrid.innerHTML = '<p style="text-align:center;padding:3rem;color:#64748b;">Loading history records...</p>';
+
+        try {
+            const res = await fetch('/bookings');
+            const allBookings = await res.json();
+
+            const completed = allBookings.filter(b =>
+                b.vaccineId && b.vaccineId.hospitalName === currentHospitalName &&
+                (b.status || '').toLowerCase() === 'completed'
+            );
+
+            completed.sort((a, b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('history-count').innerText = completed.length;
+            historyGrid.innerHTML = '';
+
+            if (completed.length === 0) {
+                historyGrid.innerHTML = `
+                <div style="text-align:center;padding:5rem 2rem;background:#fff;border-radius:1.5rem;border:2px dashed #e2eaf3;">
+                    <span class="material-symbols-outlined" style="font-size:4rem;color:#cbd5e1;margin-bottom:1rem;">history</span>
+                    <h3 style="color:#475569;font-weight:700;">No History Records</h3>
+                    <p style="color:#94a3b8;max-width:300px;margin:0.5rem auto;">When you mark bookings as completed, they will appear here as permanent records.</p>
+                </div>`;
+                return;
+            }
+
+            completed.forEach(b => {
+                const ptName = b.userId ? b.userId.name : 'Unknown Patient';
+                const vaxName = b.vaccineId ? b.vaccineId.name : 'Vaccine';
+                const dateObj = new Date(b.date);
+                const dateStr = !isNaN(dateObj) ? dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                const timeStr = b.time || 'N/A';
+                const doseInfo = (b.totalDoses > 1 || (b.vaccineId && b.vaccineId.dosesRequired > 1))
+                    ? `Dose ${b.doseNumber || 1} of ${b.totalDoses > 1 ? b.totalDoses : b.vaccineId.dosesRequired}`
+                    : 'Full Course (Single Dose)';
+
+                historyGrid.innerHTML += `
+                    <div style="background:#fff; border-radius:1rem; border:1px solid #e2eaf3; padding:1.5rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.02); transition:all 0.3s ease;">
+                        <div style="display:flex; align-items:center; gap:1.5rem;">
+                            <div style="width:48px; height:48px; border-radius:12px; background:#f0fdf4; color:#16a34a; display:flex; align-items:center; justify-content:center;">
+                                <span class="material-symbols-outlined" style="font-size:1.8rem;">task_alt</span>
+                            </div>
+                            <div>
+                                <h4 style="font-size:1.1rem; font-weight:700; color:#0f1d25; margin:0;">${ptName}</h4>
+                                <div style="display:flex; align-items:center; gap:0.8rem; margin-top:0.25rem;">
+                                    <span style="font-size:0.85rem; color:#64748b; background:#f1f5f9; padding:0.15rem 0.6rem; border-radius:4px;">${vaxName}</span>
+                                    <span style="font-size:0.85rem; color:#0061a4; font-weight:600;">${doseInfo}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:700; color:#1e293b; font-size:0.95rem;">${dateStr}</div>
+                            <div style="font-size:0.8rem; color:#64748b;">${timeStr}</div>
+                            <div style="margin-top:0.5rem; font-size:0.65rem; font-weight:800; color:#16a34a; text-transform:uppercase; letter-spacing:0.05em; background:#dcfce7; padding:0.2rem 0.5rem; border-radius:4px; display:inline-block;">Verified Record</div>
+                        </div>
+                    </div>`;
+            });
+        } catch (e) {
+            console.error('Error loading history:', e);
+            historyGrid.innerHTML = '<div class="card" style="text-align:center;color:#dc2626;padding:2rem;">Failed to load history. Please try again.</div>';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => { 
         if (await checkAuth('hospital')) {
             syncTopNav();
             loadAdminData(); 
-            buildTimings(); 
+            buildTimings();
+            // Handle hash-based navigation (e.g. from hospital-profile sidebar)
+            const hash = window.location.hash.replace('#', '');
+            if (hash && document.getElementById(hash)) {
+                switchSection(hash);
+            }
         }
     });
 </script>
