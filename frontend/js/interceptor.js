@@ -4,7 +4,9 @@
     window.fetch = async function(...args) {
         let [url, config] = args;
         
-        const BASE_URL = "";
+        const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:5000' 
+            : 'https://vaxcare-project.onrender.com';
 
         if (typeof url === 'string' && url.startsWith('/')) {
             url = BASE_URL + url;

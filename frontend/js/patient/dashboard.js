@@ -190,10 +190,10 @@ function renderNotifications(notifications) {
           }
           // Handle booking/vaccination notifications → redirect to correct page
           else if (clickTarget === 'history') {
-              window.location.href = '/src/pages/patient-history.html';
+              window.location.href = './patient-history.html';
           }
           else if (clickTarget === 'appointments') {
-              window.location.href = '/src/pages/patient-appointments.html';
+              window.location.href = './patient-appointments.html';
           }
           else if (clickTarget === 'dashboard') {
               // Already on dashboard — just close dropdown and scroll to vaccines

@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 // Socket.io initialization
 const io = new Server(server, {
   cors: {
-    origin: ["http://127.0.0.1:5000", "http://localhost:5000", "https://vaxcare-project.vercel.app"],
+    origin: ["http://127.0.0.1:5000", "http://localhost:5000", "http://127.0.0.1:5500", "http://localhost:5500", "https://vaxcare-project.vercel.app"],
     methods: ["GET", "POST"]
   }
 });
@@ -52,7 +52,7 @@ connectDB();
 
 // ── Global Middleware ───────────────────────────────────────────
 app.use(cors({
-  origin: ["http://127.0.0.1:5000", "http://localhost:5000", "https://vaxcare-project.vercel.app"],
+  origin: ["http://127.0.0.1:5000", "http://localhost:5000", "http://127.0.0.1:5500", "http://localhost:5500", "https://vaxcare-project.vercel.app"],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

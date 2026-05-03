@@ -134,7 +134,7 @@ function togglePasswordSection(sectionId, btnId) {
 // ── API: GET /profile ─────────────────────────────────────────────
 async function fetchProfile() {
   const token = localStorage.getItem('vaxToken');
-  const baseUrl = "";
+  const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'https://vaxcare-project.onrender.com';
   const res = await fetch(`${baseUrl}/profile`, {
     headers: { 'Authorization': `Bearer ${token}` }
   });
@@ -145,7 +145,7 @@ async function fetchProfile() {
 // ── API: PUT /profile ─────────────────────────────────────────────
 async function saveProfile(payload) {
   const token = localStorage.getItem('vaxToken');
-  const baseUrl = "";
+  const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'https://vaxcare-project.onrender.com';
   if (window._profileImageBase64 !== undefined && window._profileImageBase64 !== null) {
     payload.profileImage = window._profileImageBase64;
   }
@@ -168,7 +168,7 @@ async function saveProfile(payload) {
 // ── API: PUT /profile/password ────────────────────────────────────
 async function changePassword(currentPassword, newPassword, confirmPassword) {
   const token = localStorage.getItem('vaxToken');
-  const baseUrl = "";
+  const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'https://vaxcare-project.onrender.com';
   if (newPassword !== confirmPassword) throw new Error('New passwords do not match.');
   const res  = await fetch(`${baseUrl}/profile/password`, {
     method: 'PUT',
