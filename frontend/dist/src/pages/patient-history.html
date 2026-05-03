@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaxCare — Vaccination History</title>
+  <!-- interceptor.js: wraps fetch() to auto-inject JWT token on every API call -->
+  <!-- script.js: provides checkAuth(), syncTopNav(), logoutUser() helpers -->
+  <script type="module" crossorigin src="/assets/patientHistory-j33HSLfe.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/script-Bt3IUgpZ.js">
+  <link rel="modulepreload" crossorigin href="/assets/chat-B0TZdtzL.js">
+  <link rel="modulepreload" crossorigin href="/assets/chatbot-BenAZOW3.js">
+  <link rel="modulepreload" crossorigin href="/assets/interceptor-COjXu36p.js">
+  <link rel="stylesheet" crossorigin href="/assets/script-B1xWI_jG.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar — Navigation links (Dashboard, My Appointments) + Logout button -->
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>VaxCare</h1>
+      <p>Clinical Portal</p>
+    </div>
+    <nav class="sidenav">
+      <a class="navlink" href="./patient-dashboard.html">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a class="navlink" href="./patient-appointments.html">
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span>My Appointments</span>
+      </a>
+      <a class="navlink active" href="./patient-history.html">
+        <span class="material-symbols-outlined">history</span>
+        <span>Vaccination History</span>
+      </a>
+      <a class="navlink" href="./patient-profile.html">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        <span>My Profile</span>
+      </a>
+    </nav>
+    <div class="sidefoot">
+      <button class="logout" onclick="logoutUser()">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main">
+
+    <!-- Top Header — page title + user name/avatar (populated by syncTopNav()) -->
+    <header class="header">
+      <h2 class="header-title">Vaccination History</h2>
+      <div class="header-right">
+        <div class="header-user" style="cursor:pointer; transition:opacity 0.2s;" onclick="window.location.href='patient-profile.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          <span class="header-name" id="top-nav-name">Welcome back</span>
+          <div class="avatar"
+               style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                      color:#fff;display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+            <img id="header-avatar-img" src="" alt=""
+                 style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+            <span id="header-avatar-init"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="content">
+
+      <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.5rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 100%);border-radius:12px;border:1px solid #bbf7d0;">
+        <span class="material-symbols-outlined" style="font-size:1.3rem;color:#16a34a;">verified</span>
+        <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Your completed vaccinations are listed below. You can download certificates, rate your experience, or message the hospital.</p>
+      </div>
+
+      <!-- Completed appointments — shows finished vaccinations with Rate button -->
+      <div id="completedSection">
+        <div id="completedContainer" class="appt-list"></div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="dash-foot">
+      <div class="foot-logo">VaxCare</div>
+      <div class="foot-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Support</a>
+      </div>
+      <p class="foot-note">© 2026 VaxCare Clinical Sanctuary. All rights reserved.</p>
+    </footer>
+
+  </div>
+</div>
+
+<!-- jsPDF for certificate generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Rating & Review Popup -->
+<div id="ratingModal" class="popup-bg hidden">
+  <div class="popup" style="text-align:center;max-width:440px;">
+    <button class="popup-close" onclick="closeRatingModal()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <h3 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem;">Rate Your Experience</h3>
+    <p style="color:#404752;margin-bottom:1.5rem;">
+      How was your vaccination for <strong id="ratingVaccineName"></strong>?
+    </p>
+    <div style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1rem;" id="starContainer">
+      <button class="star-btn" data-val="1"
+        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
+      <button class="star-btn" data-val="2"
+        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
+      <button class="star-btn" data-val="3"
+        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
+      <button class="star-btn" data-val="4"
+        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
+      <button class="star-btn" data-val="5"
+        style="font-size:2.5rem;color:#bfc7d4;background:none;border:none;cursor:pointer;font-family:'Material Symbols Outlined';">star</button>
+    </div>
+    <p id="ratingMeaning" style="font-size:0.875rem;font-weight:700;color:#ca8a04;height:1.25rem;margin-bottom:1rem;"></p>
+    <textarea id="reviewText" placeholder="Write a short review about your experience (optional)..."
+      style="width:100%;min-height:80px;padding:0.75rem 1rem;border:1px solid #bfc7d4;border-radius:0.75rem;font-family:inherit;font-size:0.85rem;resize:vertical;margin-bottom:1.5rem;outline:none;transition:border-color 0.2s;"
+      onfocus="this.style.borderColor='#0061a4'" onblur="this.style.borderColor='#bfc7d4'"></textarea>
+    <div style="display:flex;gap:1rem;">
+      <button onclick="closeRatingModal()" class="btn btn-light" style="flex:1;">Cancel</button>
+      <button onclick="submitRating()" class="btn btn-blue" style="flex:1;">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../js/patient/history.js"></script>
+</body>
+</html>

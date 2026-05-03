@@ -45,21 +45,21 @@
         <div class="sbar-icon" style="background:linear-gradient(135deg,#dbeafe,#e9f5ff);color:#0061a4;">
           <span class="material-symbols-outlined">local_hospital</span>
         </div>
-        <div class="sbar-num">500+</div>
+        <div class="sbar-num" id="stats-hospitals-count">...</div>
         <div class="sbar-lbl">Hospitals</div>
       </div>
       <div class="sbar-item">
         <div class="sbar-icon" style="background:linear-gradient(135deg,#d1fae5,#ecfdf5);color:#059669;">
           <span class="material-symbols-outlined">vaccines</span>
         </div>
-        <div class="sbar-num">50K+</div>
+        <div class="sbar-num" id="stats-vaccinations-count">...</div>
         <div class="sbar-lbl">Vaccinations</div>
       </div>
       <div class="sbar-item">
         <div class="sbar-icon" style="background:linear-gradient(135deg,#fef3c7,#fffbeb);color:#d97706;">
           <span class="material-symbols-outlined">thumb_up</span>
         </div>
-        <div class="sbar-num">98%</div>
+        <div class="sbar-num" id="stats-satisfaction-count">...</div>
         <div class="sbar-lbl">Satisfaction</div>
       </div>
       <div class="sbar-item">
@@ -408,12 +408,35 @@
 </div>
 
 <!-- script.js — handles modal, tabs, signup wizard, login/signup API calls -->
-<script src="./js/script.js"></script>
+<script type="module" src="./src/utils/script.js"></script>
+<script type="module" src="./src/utils/chatbot.js"></script>
 <script>
   // Auto-redirect if already logged in
   document.addEventListener('DOMContentLoaded', () => {
     redirectIfLoggedIn();
+    fetchStatistics();
   });
+
+  async function fetchStatistics() {
+    try {
+      const BASE_URL = "";
+
+      const response = await fetch(`${BASE_URL}/statistics`);
+      const data = await response.json();
+      
+      if(data) {
+        document.getElementById('stats-hospitals-count').innerText = data.hospitals + '+';
+        document.getElementById('stats-vaccinations-count').innerText = data.vaccinations + '+';
+        document.getElementById('stats-satisfaction-count').innerText = data.satisfaction + '%';
+      }
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+      // Fallback values
+      document.getElementById('stats-hospitals-count').innerText = '500+';
+      document.getElementById('stats-vaccinations-count').innerText = '50K+';
+      document.getElementById('stats-satisfaction-count').innerText = '98%';
+    }
+  }
 </script>
 </body>
 </html>

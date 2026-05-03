@@ -20,6 +20,7 @@ const getBookings = async (req, res) => {
         const hospital = await User.findOne({ name: obj.vaccineId.hospitalName, role: 'hospital' }, { password: 0 });
         if (hospital) {
           obj.hospitalDetails = {
+            id: hospital._id,
             governmentId: hospital.governmentId || 'N/A',
             location: hospital.location || 'N/A',
             address: hospital.address || 'N/A'
@@ -42,7 +43,11 @@ const getBookedSlots = async (req, res) => {
     if (!vaccineId || !date)
       return res.status(400).json({ message: 'vaccineId and date required' });
 
-    const bookings = await Booking.find({ vaccineId, date });
+    const bookings = await Booking.find({ 
+      vaccineId, 
+      date, 
+      status: { $nin: ['Cancelled', 'Rejected'] } 
+    });
     const slots = bookings.map(b => b.time);
     res.status(200).json({ bookedSlots: slots });
   } catch (error) {
@@ -59,6 +64,30 @@ const createBooking = async (req, res) => {
     const vaccine = await Vaccine.findById(vaccineId);
     if (!vaccine) return res.status(404).json({ message: 'Vaccine not found' });
     if (vaccine.stock <= 0) return res.status(400).json({ message: 'Vaccine out of stock' });
+
+    // Validate that the date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const bookingDate = new Date(date + 'T00:00:00');
+    if (bookingDate < today) {
+      return res.status(400).json({ message: 'Cannot book an appointment in the past.' });
+    }
+
+    // Validate if the booking is for today, the time must be in the future
+    if (bookingDate.getTime() === today.getTime() && time) {
+      const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+      const parts = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (parts) {
+        let h = parseInt(parts[1]);
+        const m = parseInt(parts[2]);
+        const period = parts[3].toUpperCase();
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        if ((h * 60 + m) <= nowMinutes) {
+          return res.status(400).json({ message: 'Cannot book a past time slot for today.' });
+        }
+      }
+    }
 
     // Calculate Dose Number
     const previousBookings = await Booking.find({ 
@@ -91,6 +120,31 @@ const createBooking = async (req, res) => {
       appointmentTime: time
     });
     await notification.save();
+
+    // Create notification for the hospital
+    const hospital = await User.findOne({ name: vaccine.hospitalName, role: 'hospital' });
+    if (hospital) {
+      const patient = await User.findById(userId);
+      const patientName = patient ? patient.name : 'A patient';
+      const hospNotif = new Notification({
+        userId: hospital._id,
+        bookingId: newBooking._id,
+        type: 'booking',
+        title: 'New Booking Request',
+        message: `${patientName} has booked an appointment for ${vaccine.name} on ${date} at ${time}. Please accept or reject this booking in your dashboard.`,
+        appointmentDate: date,
+        appointmentTime: time
+      });
+      await hospNotif.save();
+      
+      // Emit real-time notification to hospital via Socket.IO
+      if (req.io) {
+        req.io.to(hospital._id.toString()).emit('newBookingNotification', {
+          notification: hospNotif,
+          bookingId: newBooking._id
+        });
+      }
+    }
 
     res.status(201).json({ message: 'Booking created successfully', booking: newBooking });
   } catch (error) {
@@ -161,6 +215,22 @@ const updateBooking = async (req, res) => {
             });
             await followUpNotif.save();
           }
+        }
+      }
+
+      // If completed, send the completed notification
+      if (status === 'Completed' && prevStatus !== 'Completed') {
+        const vaccine = await Vaccine.findById(booking.vaccineId);
+        if (vaccine) {
+          const notification = new Notification({
+            userId: booking.userId,
+            bookingId: booking._id,
+            title: 'Vaccination Completed',
+            message: `You successfully completed the vaccination for ${vaccine.name}. You can now download your certificate and leave a review and rating.`,
+            appointmentDate: booking.date,
+            appointmentTime: booking.time
+          });
+          await notification.save();
         }
       }
     }

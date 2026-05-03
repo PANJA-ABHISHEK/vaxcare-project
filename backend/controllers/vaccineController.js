@@ -21,10 +21,16 @@ const getVaccines = async (req, res) => {
       const missing = !obj.location || obj.location.trim() === '' || obj.location === 'Not specified';
       if (missing && obj.hospitalName) {
         const hospital = await User.findOne({ name: obj.hospitalName, role: 'hospital' });
-        if (hospital && hospital.location) {
-          obj.location = hospital.location;
-          await Vaccine.findByIdAndUpdate(v._id, { location: hospital.location });
+        if (hospital) {
+          if (hospital.location) {
+            obj.location = hospital.location;
+            await Vaccine.findByIdAndUpdate(v._id, { location: hospital.location });
+          }
+          obj.hospitalId = hospital._id.toString();
         }
+      } else if (obj.hospitalName) {
+        const hospital = await User.findOne({ name: obj.hospitalName, role: 'hospital' });
+        if (hospital) obj.hospitalId = hospital._id.toString();
       }
       return obj;
     }));

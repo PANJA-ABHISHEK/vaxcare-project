@@ -1,0 +1,1 @@
+import{n as e}from"./script-Bt3IUgpZ.js";var t=e((()=>{var e=document.createElement(`style`);e.textContent=`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`,document.head.appendChild(e)}));export{t};

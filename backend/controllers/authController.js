@@ -1,4 +1,4 @@
-﻿const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
 const User   = require('../models/User');
 
@@ -35,7 +35,7 @@ const signup = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: { _id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, location: newUser.location }
+      user: { _id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role, location: newUser.location, profileImage: newUser.profileImage }
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -68,7 +68,7 @@ const login = async (req, res) => {
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role, location: user.location }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, location: user.location, profileImage: user.profileImage }
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

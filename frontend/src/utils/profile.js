@@ -103,17 +103,16 @@ function syncHeaderAfterSave(name, profileImage) {
 
   // Avatar: either the image element or the initials div
   const headerAvatarImg = document.getElementById('header-avatar-img');
-  const headerAvatarInit = document.getElementById('top-nav-avatar') || document.getElementById('header-avatar');
+  const headerAvatarInit = document.getElementById('header-avatar-init');
   
   if (profileImage && headerAvatarImg) {
     headerAvatarImg.src = profileImage;
     headerAvatarImg.style.display = 'block';
-    if (headerAvatarInit) headerAvatarInit.style.backgroundImage = `url('${profileImage}')`;
-    if (headerAvatarInit) headerAvatarInit.innerText = "";
+    if (headerAvatarInit) headerAvatarInit.style.display = 'none';
   } else if (profileImage === "" || !profileImage) {
     if (headerAvatarImg) headerAvatarImg.style.display = 'none';
     if (headerAvatarInit) {
-      headerAvatarInit.style.backgroundImage = 'none';
+      headerAvatarInit.style.display = 'inline-block';
       headerAvatarInit.innerText = name ? name.charAt(0).toUpperCase() : '?';
     }
   }
@@ -134,19 +133,28 @@ function togglePasswordSection(sectionId, btnId) {
 
 // ── API: GET /profile ─────────────────────────────────────────────
 async function fetchProfile() {
-  const res = await fetch('/profile');
+  const token = localStorage.getItem('vaxToken');
+  const baseUrl = "";
+  const res = await fetch(`${baseUrl}/profile`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
   if (!res.ok) throw new Error('Failed to load profile');
   return await res.json();
 }
 
 // ── API: PUT /profile ─────────────────────────────────────────────
 async function saveProfile(payload) {
+  const token = localStorage.getItem('vaxToken');
+  const baseUrl = "";
   if (window._profileImageBase64 !== undefined && window._profileImageBase64 !== null) {
     payload.profileImage = window._profileImageBase64;
   }
-  const res  = await fetch('/profile', {
+  const res  = await fetch(`${baseUrl}/profile`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
@@ -159,10 +167,15 @@ async function saveProfile(payload) {
 
 // ── API: PUT /profile/password ────────────────────────────────────
 async function changePassword(currentPassword, newPassword, confirmPassword) {
+  const token = localStorage.getItem('vaxToken');
+  const baseUrl = "";
   if (newPassword !== confirmPassword) throw new Error('New passwords do not match.');
-  const res  = await fetch('/profile/password', {
+  const res  = await fetch(`${baseUrl}/profile/password`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
     body: JSON.stringify({ currentPassword, newPassword })
   });
   const data = await res.json();
@@ -203,3 +216,16 @@ function setEditMode(enabled) {
 const _s = document.createElement('style');
 _s.textContent = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
 document.head.appendChild(_s);
+
+// Expose functions globally for non-module scripts
+window.showToast = showToast;
+window.setLoading = setLoading;
+window.initAvatarUpload = initAvatarUpload;
+window.removeAvatar = removeAvatar;
+window.renderAvatar = renderAvatar;
+window.syncHeaderAfterSave = syncHeaderAfterSave;
+window.togglePasswordSection = togglePasswordSection;
+window.fetchProfile = fetchProfile;
+window.saveProfile = saveProfile;
+window.changePassword = changePassword;
+window.setEditMode = setEditMode;

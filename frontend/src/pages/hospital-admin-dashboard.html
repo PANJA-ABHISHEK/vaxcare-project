@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaxCare | Hospital Admin Dashboard</title>
+  <link rel="stylesheet" href="../../css/styles.css"/>
+  <style>
+    /* Admin-specific layout overrides */
+    .admin-wrap   { display: flex; min-height: 100vh; }
+    .admin-side   { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; z-index: 50; }
+    .admin-body   { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .admin-top    { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; background: rgba(248,250,252,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(219,234,245,0.5); position: sticky; top: 0; z-index: 40; }
+    .page-sec              { display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease-out; }
+    .page-sec.active       { display: block; opacity: 1; transform: translateY(0); }
+    .booking-grid          { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+    .vax-layout            { display: grid; grid-template-columns: 400px 1fr; gap: 2rem; align-items: start; }
+    .vax-layout > *        { min-width: 0; overflow: hidden; }
+    .vax-left              { min-width: 0; display: flex; flex-direction: column; gap: 1.5rem; }
+    @media (max-width: 960px) { .vax-layout { grid-template-columns: 1fr; } }
+    .act-row               { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 1rem; }
+    .act-row button        { flex: 1; padding: 0.5rem; font-size: 0.82rem; font-weight: 700; border-radius: 0.75rem; border: none; cursor: pointer; transition: filter .15s; }
+    .act-row button:hover  { filter: brightness(.93); }
+    .btn-accept            { background: #d1fae5; color: #065f46; }
+    .btn-reject            { background: #fee2e2; color: #991b1b; }
+    .btn-complete          { background: #0061a4; color: #fff; }
+    .btn-stock             { background: #dbeafe; color: #1e40af; padding: .25rem .75rem; border-radius: 0.5rem; font-size: .75rem; font-weight: 700; border: none; cursor: pointer; }
+    .btn-edit              { background: none; border: none; cursor: pointer; color: #0061a4; padding: .25rem; border-radius: 9999px; transition: background .15s; }
+    .btn-edit:hover        { background: #dbeafe; }
+    .btn-del               { background: none; border: none; cursor: pointer; color: #ba1a1a; padding: .25rem; border-radius: 9999px; }
+    .btn-del:hover         { background: #ffdad6; }
+
+    /* Edit Modal */
+    .edit-overlay          { position: fixed; inset: 0; background: rgba(15,29,37,.5); backdrop-filter: blur(6px); z-index: 600; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .edit-overlay.hidden   { display: none; }
+    .edit-modal            { background: #fff; border-radius: 1.5rem; padding: 2.5rem; width: 100%; max-width: 480px; box-shadow: 0 20px 48px -8px rgba(15,29,37,.12); position: relative; animation: editSlideIn .25s ease-out; }
+    @keyframes editSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .edit-modal h3         { font-family: 'Manrope', sans-serif; font-size: 1.15rem; font-weight: 800; margin-bottom: 1.5rem; color: #0f1d25; display: flex; align-items: center; gap: .5rem; }
+    .edit-modal .field     { margin-bottom: 1rem; }
+    .edit-modal label      { font-size: .8rem; font-weight: 700; color: #404752; display: block; margin-bottom: .35rem; }
+    .edit-modal input      { width: 100%; padding: .75rem 1rem; background: #e9f5ff; border: 1.5px solid transparent; border-radius: .75rem; font-size: .9rem; color: #0f1d25; outline: none; transition: border-color .2s, background .2s; box-sizing: border-box; }
+    .edit-modal input:focus { border-color: #0061a4; background: #fff; }
+    .edit-modal .edit-actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+    .edit-modal .edit-actions button { flex: 1; padding: .75rem; border-radius: 9999px; font-family: 'Manrope', sans-serif; font-size: .9rem; font-weight: 700; border: none; cursor: pointer; transition: all .15s; }
+    .edit-modal .btn-save  { background: linear-gradient(135deg, #0061a4, #00a8ff); color: #fff; box-shadow: 0 4px 15px rgba(0,97,164,.3); }
+    .edit-modal .btn-save:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,97,164,.4); }
+    .edit-modal .btn-cancel { background: #f1f5f9; color: #404752; }
+    .edit-modal .btn-cancel:hover { background: #e2e8f0; }
+    .edit-close            { position: absolute; top: 1.25rem; right: 1.25rem; width: 36px; height: 36px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: #404752; cursor: pointer; background: none; border: none; transition: background .2s; }
+    .edit-close:hover      { background: #dbeaf5; }
+    .two-col               { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .two-col .field        { min-width: 0; }
+    .two-col input         { width: 100%; box-sizing: border-box; }
+    .timings-list          { display: flex; flex-direction: column; gap: .45rem; margin-top: .75rem; }
+    .timing-row            { display: grid; grid-template-columns: 2.4rem 1fr 1fr minmax(60px,auto); align-items: center; gap: .4rem; padding: .5rem .6rem; border-radius: .75rem; background: #f8fafc; border: 1px solid #e2eaf3; min-width: 0; }
+    .timing-row.is-closed  { opacity: .45; }
+    .day-lbl               { font-size: .78rem; font-weight: 800; color: #0f1d25; }
+    .timing-row input[type="time"] { padding: .28rem .35rem; border: 1.5px solid #dbeaf5; border-radius: .5rem; font-size: .76rem; background: #fff; color: #0f1d25; width: 100%; min-width: 0; box-sizing: border-box; }
+    .timing-row input[type="time"]:focus { border-color: #0061a4; outline: none; }
+    .closed-lbl            { display: flex; align-items: center; gap: .25rem; font-size: .7rem; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; }
+    .closed-lbl input      { accent-color: #ba1a1a; width: .85rem; height: .85rem; cursor: pointer; flex-shrink: 0; }
+    .panel-sub             { font-size: .8rem; color: #64748b; margin-top: .15rem; margin-bottom: .1rem; }
+  </style>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script type="module" src="../utils/interceptor.js"></script>
+  <script type="module" src="../utils/script.js"></script>
+  <script type="module" src="../utils/chat.js"></script>
+  <script type="module" src="../utils/chatbot.js"></script>
+</head>
+<body>
+
+<div class="admin-wrap">
+
+  <!-- Fixed Sidebar -->
+  <aside class="admin-side">
+    <div class="brand">
+      <h1>VaxCare</h1>
+      <p>Admin Portal</p>
+    </div>
+    <nav class="sidenav" id="sidebar-nav">
+      <a href="#dashboard" onclick="event.preventDefault();switchSection('dashboard')" class="navlink active" data-target="dashboard">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="#bookings" onclick="event.preventDefault();switchSection('bookings')" class="navlink" data-target="bookings">
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span>Bookings</span>
+      </a>
+      <a href="#vaccines" onclick="event.preventDefault();switchSection('vaccines')" class="navlink" data-target="vaccines">
+        <span class="material-symbols-outlined">vaccines</span>
+        <span>Vaccines</span>
+      </a>
+      <a href="#history" onclick="event.preventDefault();switchSection('history')" class="navlink" data-target="history">
+        <span class="material-symbols-outlined">history</span>
+        <span>History</span>
+      </a>
+      <a href="#reviews" onclick="event.preventDefault();switchSection('reviews')" class="navlink" data-target="reviews">
+        <span class="material-symbols-outlined">rate_review</span>
+        <span>Reviews</span>
+      </a>
+      <a href="#messages" onclick="event.preventDefault();switchSection('messages')" class="navlink" data-target="messages">
+        <span class="material-symbols-outlined">chat</span>
+        <span>Messages</span>
+      </a>
+      <a href="./hospital-profile.html" class="navlink" data-target="profile">
+        <span class="material-symbols-outlined">manage_accounts</span>
+        <span>Profile</span>
+      </a>
+    </nav>
+    <div class="sidefoot">
+      <button class="logout" onclick="logoutUser()">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Body -->
+  <main class="admin-body">
+
+    <!-- Top Header -->
+    <header class="admin-top">
+      <h2 id="header-title" style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:700;">Dashboard Overview</h2>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <!-- Notification Bell -->
+        <div class="notif-bell-container" id="notifContainer" style="position:relative;">
+          <button class="notif-btn" id="notifBtn" style="background:none;border:none;cursor:pointer;position:relative;padding:0.25rem;">
+            <span class="material-symbols-outlined" style="font-size:1.5rem;color:#404752;">notifications</span>
+            <div class="notif-badge hidden" id="notifBadge" style="position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;">0</div>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown" style="display:none;position:absolute;right:0;top:100%;width:340px;background:#fff;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,0.15);border:1px solid #e2e8f0;z-index:100;max-height:400px;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #f1f5f9;">
+              <h3 style="font-size:0.95rem;font-weight:800;">Notifications</h3>
+              <button id="markAllReadBtn" style="font-size:0.75rem;color:#0061a4;font-weight:700;background:none;border:none;cursor:pointer;">Mark all as read</button>
+            </div>
+            <div id="notifList" style="padding:0.5rem;">
+              <div style="text-align:center;padding:1.5rem;color:#64748b;">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:opacity 0.2s;" onclick="window.location.href='hospital-profile.html'" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          <span id="header-name" style="font-size:.875rem;font-weight:700;color:#0f1d25;">Hospital Admin</span>
+          <div id="header-avatar"
+               style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0061a4,#00a8ff);
+                      color:#fff;display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;">
+            <img id="header-avatar-img" src="" alt=""
+                 style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+            <span id="header-avatar-init"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div style="padding:2.5rem;flex:1;max-width:1280px;width:100%;">
+
+      <!-- DASHBOARD SECTION -->
+      <section id="dashboard" class="page-sec">
+        <div class="stats" style="margin-bottom:2rem;">
+          <div class="stat" onclick="switchSection('history')" style="cursor:pointer; background: #fff; border: 1px solid #e2e8f0;">
+            <div class="stat-label" style="color: #64748b;">Total Bookings</div>
+            <div class="panel-sub" style="color:#94a3b8;font-size:0.7rem;margin-top:-0.2rem;">(Completed + Active)</div>
+            <div style="display:flex;align-items:flex-end;gap:1rem;margin-top:.5rem;">
+              <div class="stat-value" id="stat-total-bookings" style="color: #0f1d25;">0</div>
+              <span class="material-symbols-outlined" style="color:#0061a4;font-size:1.75rem;margin-bottom:.25rem;">history_edu</span>
+            </div>
+          </div>
+          <div class="stat" onclick="switchSection('vaccines')" style="cursor:pointer;">
+            <div class="stat-label">Vaccine Stock</div>
+            <div style="display:flex;align-items:flex-end;gap:1rem;margin-top:.5rem;">
+              <div class="stat-value" id="stat-avail-vaccines">0</div>
+              <span class="material-symbols-outlined" style="color:#ca8a04;font-size:1.75rem;margin-bottom:.25rem;">vaccines</span>
+            </div>
+          </div>
+          <div class="stat" style="background:linear-gradient(135deg,#0061a4,#2196f3);color:#fff;">
+            <div class="stat-label" style="color:rgba(255,255,255,.8);">Pending Appointments</div>
+            <div style="display:flex;align-items:flex-end;gap:1rem;margin-top:.5rem;">
+              <div class="stat-value" id="stat-today-appts" style="color:#fff;">0</div>
+              <span class="material-symbols-outlined" style="color:rgba(255,255,255,.8);font-size:1.75rem;margin-bottom:.25rem;">event_available</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Schedule Table -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Today's Schedule</h3>
+          </div>
+          <div class="tbl">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Patient Name</th>
+                  <th>Vaccine</th>
+                </tr>
+              </thead>
+              <tbody id="today-appointments-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOOKINGS SECTION -->
+      <section id="bookings" class="page-sec">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.5rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border-radius:12px;border:1px solid #bfdbfe;">
+          <span class="material-symbols-outlined" style="font-size:1.3rem;color:#0284c7;">event_available</span>
+          <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Review and manage patient vaccination appointments. Accept, decline, or mark them as completed.</p>
+        </div>
+        <div id="pending-bookings" class="booking-grid"></div>
+      </section>
+
+      <section id="vaccines" class="page-sec">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.5rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border-radius:12px;border:1px solid #bfdbfe;">
+          <span class="material-symbols-outlined" style="font-size:1.3rem;color:#0284c7;">vaccines</span>
+          <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Register new vaccines, manage current inventory stock, and set your hospital's operational timings.</p>
+        </div>
+        <div class="vax-layout">
+
+          <!-- LEFT COLUMN: Add Vaccine + Hospital Timings -->
+          <div class="vax-left">
+
+            <!-- Add Vaccine Form -->
+            <div class="panel" style="padding:2rem;">
+              <h3 style="margin-bottom:1.25rem;">Add Vaccine</h3>
+              <div class="field" style="margin-bottom:1rem;">
+                <label>Vaccine Name</label>
+                <input id="add-vax-name" type="text" placeholder="e.g. Pfizer-BioNTech"/>
+              </div>
+              <div class="field" style="margin-bottom:1rem;">
+                <label>Doctor Name</label>
+                <input id="add-vax-doctor" type="text" placeholder="Dr. Robertson"/>
+              </div>
+              <div class="two-col" style="margin-bottom:1rem;">
+                <div class="field">
+                  <label>Experience (Yrs)</label>
+                  <input id="add-vax-exp" type="number" placeholder="5"/>
+                </div>
+                <div class="field">
+                  <label>Stock</label>
+                  <input id="add-vax-stock" type="number" placeholder="250"/>
+                </div>
+              </div>
+              <div class="two-col" style="margin-bottom:1rem;">
+                <div class="field">
+                  <label>Cost (₹)</label>
+                  <input id="add-vax-cost" type="number" placeholder="500" min="0" step="0.01"/>
+                </div>
+                <div class="field">
+                  <label>Total Doses</label>
+                  <input id="add-vax-doses" type="number" placeholder="1" min="1" value="1" onchange="toggleDaysBetweenDoses()"/>
+                </div>
+              </div>
+              <div class="field" id="wrap-vax-days" style="margin-bottom:1rem; display:none;">
+                <label>Days Between Doses</label>
+                <input id="add-vax-days" type="number" placeholder="28" min="0" value="0"/>
+              </div>
+              <button onclick="registerVaccine()" class="btn btn-blue btn-full" style="margin-top:.5rem;">
+                Register Vaccine
+              </button>
+            </div>
+            
+
+            <!-- Hospital Timings Card -->
+            <div class="panel" style="padding:2rem;">
+              <h3>Hospital Timings</h3>
+              <p class="panel-sub">Set working hours for each day</p>
+              <div class="timings-list" id="timings-list"><!-- Rows injected by JS --></div>
+              <button onclick="saveTimings()" class="btn btn-blue btn-full" style="margin-top:1.25rem;">
+                Save Timings
+              </button>
+            </div>
+
+          </div><!-- /vax-left -->
+
+          <!-- RIGHT COLUMN: Vaccine Inventory Table -->
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Vaccine Inventory</h3>
+            </div>
+            <div class="tbl">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vaccine Name</th>
+                    <th>Doctor</th>
+                    <th>Cost</th>
+                    <th>Stock</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vaccine-inventory-list"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- REVIEWS SECTION -->
+      <section id="reviews" class="page-sec">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+          <div style="flex:1;display:flex;align-items:center;gap:0.6rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border-radius:12px;border:1px solid #bfdbfe;">
+            <span class="material-symbols-outlined" style="font-size:1.3rem;color:#0284c7;">rate_review</span>
+            <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Feedback from patients who completed vaccinations at your hospital.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div id="avg-rating-badge" style="background:linear-gradient(135deg,#fef9c3,#fffbeb);border:1px solid rgba(202,138,4,0.2);padding:0.5rem 1.25rem;border-radius:9999px;display:flex;align-items:center;gap:0.4rem;">
+              <span class="material-symbols-outlined" style="color:#ca8a04;font-size:1.2rem;font-variation-settings:'FILL' 1;">star</span>
+              <span id="avg-rating-value" style="font-family:'Manrope',sans-serif;font-size:1.1rem;font-weight:800;color:#854d0e;">--</span>
+              <span style="font-size:0.75rem;color:#92400e;font-weight:600;">avg</span>
+            </div>
+            <span id="review-count" style="font-size:0.85rem;color:#64748b;font-weight:600;"></span>
+          </div>
+        </div>
+        <div id="reviews-list" style="display:flex;flex-direction:column;gap:1rem;"></div>
+      </section>
+
+      <!-- HISTORY SECTION -->
+      <section id="history" class="page-sec">
+        <div style="margin-bottom:1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <div style="flex:1;display:flex;align-items:center;gap:0.6rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border-radius:12px;border:1px solid #bfdbfe;">
+            <span class="material-symbols-outlined" style="font-size:1.3rem;color:#0284c7;">history</span>
+            <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Comprehensive record of all completed vaccinations at this facility.</p>
+          </div>
+          <div style="background: #e9f5ff; padding: 0.5rem 1rem; border-radius: 0.75rem; border: 1px solid #dbeafe;">
+            <span id="history-count" style="font-weight: 800; color: #0061a4;">0</span> 
+            <span style="font-size: 0.8rem; color: #404752; font-weight: 600;">Records Found</span>
+          </div>
+        </div>
+        
+        <div id="history-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- History items will be injected here as "slides" -->
+        </div>
+      </section>
+
+      <!-- MESSAGES SECTION -->
+      <section id="messages" class="page-sec">
+        <div style="margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div style="flex:1;display:flex;align-items:center;gap:0.6rem;padding:0.85rem 1.2rem;background:linear-gradient(135deg,#eff6ff 0%,#f8fafc 100%);border-radius:12px;border:1px solid #bfdbfe;">
+              <span class="material-symbols-outlined" style="font-size:1.3rem;color:#0284c7;">forum</span>
+              <p style="font-size:0.88rem;color:#334155;font-weight:500;margin:0;">Communicate with patients regarding their appointments and queries.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="position:relative;">
+                <span class="material-symbols-outlined" style="position:absolute;left:0.7rem;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#94a3b8;">search</span>
+                <input type="text" id="msg-search-input" placeholder="Search patients..." oninput="filterMessages()" style="padding:0.5rem 0.7rem 0.5rem 2.2rem;border:1.5px solid #e2e8f0;border-radius:2rem;font-size:0.82rem;font-family:'Inter',sans-serif;outline:none;width:200px;transition:border-color 0.2s,box-shadow 0.2s;background:#f8fafc;" onfocus="this.style.borderColor='#0284c7';this.style.boxShadow='0 0 0 3px rgba(2,132,199,0.08)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" />
+              </div>
+              <button onclick="loadHospitalMessages()" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#0284c7'" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0'" title="Refresh">
+                <span class="material-symbols-outlined" style="font-size:1.1rem;color:#64748b;">refresh</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="hospital-messages-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </section>
+
+      <!-- Instant hash-based section init (runs synchronously before paint) -->
+      
+
+      <!-- EDIT VACCINE MODAL -->
+      <div id="edit-vaccine-overlay" class="edit-overlay hidden" onclick="if(event.target===this)closeEditModal()">
+        <div class="edit-modal">
+          <button class="edit-close" onclick="closeEditModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <h3><span class="material-symbols-outlined" style="color:#0061a4;">edit</span> Edit Vaccine</h3>
+          <input type="hidden" id="edit-vax-id"/>
+          <div class="field">
+            <label>Vaccine Name</label>
+            <input id="edit-vax-name" type="text"/>
+          </div>
+          <div class="field">
+            <label>Doctor Name</label>
+            <input id="edit-vax-doctor" type="text"/>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Experience (Yrs)</label>
+              <input id="edit-vax-exp" type="number" min="0"/>
+            </div>
+            <div class="field">
+              <label>Stock</label>
+              <input id="edit-vax-stock" type="number" min="0"/>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Cost (₹)</label>
+              <input id="edit-vax-cost" type="number" min="0" step="0.01"/>
+            </div>
+            <div class="field">
+              <label>Total Doses</label>
+              <input id="edit-vax-doses" type="number" min="1"/>
+            </div>
+          </div>
+          <div class="field" id="edit-wrap-days" style="display:none;">
+            <label>Days Between Doses</label>
+            <input id="edit-vax-days" type="number" min="0"/>
+          </div>
+          <div class="edit-actions">
+            <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+            <button class="btn-save" onclick="saveEditVaccine()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="dash-foot">
+      <div class="foot-logo">VaxCare</div>
+      <p class="foot-note">© 2024 VaxCare Clinical Sanctuary. All rights reserved.</p>
+    </footer>
+
+  </main>
+</div>
+
+<script src="../../js/hospital/dashboard.js"></script>
+</body>
+</html>

@@ -54,19 +54,19 @@ function getAuthUser() {
 function logoutUser() {
   localStorage.removeItem('vaxUser');
   localStorage.removeItem('vaxToken');
-  window.location.href = './index.html';
+  window.location.href = '/index.html';
 }
 
 function checkAuth(requiredRole) {
   const user = getAuthUser();
   if (!user) {
-    window.location.href = './index.html';
+    window.location.href = '/index.html';
     return null;
   }
   if (requiredRole && user.role !== requiredRole) {
     window.location.href = user.role === 'hospital' 
-      ? './hospital-admin-dashboard.html' 
-      : './patient-dashboard.html';
+      ? '/src/pages/hospital-admin-dashboard.html' 
+      : '/src/pages/patient-dashboard.html';
     return null;
   }
   return user;
@@ -97,7 +97,7 @@ async function syncTopNav() {
         initEl.style.display = 'none';
       } else {
         initEl.innerText = u.name.charAt(0).toUpperCase();
-        initEl.style.display = 'block';
+        initEl.style.display = 'flex';
         imgEl.style.display = 'none';
         imgEl.src = '';
       }
@@ -112,9 +112,7 @@ async function syncTopNav() {
   // 2. Fetch fresh data from server quietly (bypasses localStorage 5MB quota for large base64 images)
   const token = localStorage.getItem('vaxToken');
   if (token) {
-    const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : "https://vaxcare-project.onrender.com";
+    const BASE_URL = "";
 
     try {
       const res = await fetch(`${BASE_URL}/profile`, {
@@ -150,8 +148,8 @@ function redirectIfLoggedIn() {
     const user = getAuthUser();
     if (user) {
       window.location.href = user.role === 'hospital' 
-        ? './hospital-admin-dashboard.html' 
-        : './patient-dashboard.html';
+        ? '/src/pages/hospital-admin-dashboard.html' 
+        : '/src/pages/patient-dashboard.html';
     }
   }
 }
@@ -195,6 +193,21 @@ function prevSignupStep() {
 }
 
 // Submit handler
+// ── Expose all functions to window for inline onclick handlers ──
+// (Required because this file is loaded as type="module")
+window.openLoginModal    = openLoginModal;
+window.openSignupModal   = openSignupModal;
+window.closeAuthModal    = closeAuthModal;
+window.switchTab         = switchTab;
+window.getAuthUser       = getAuthUser;
+window.logoutUser        = logoutUser;
+window.checkAuth         = checkAuth;
+window.syncTopNav        = syncTopNav;
+window.redirectIfLoggedIn = redirectIfLoggedIn;
+window.nextSignupStep    = nextSignupStep;
+window.prevSignupStep    = prevSignupStep;
+window.handleAuthSubmit  = handleAuthSubmit;
+
 async function handleAuthSubmit(event, type) {
   event.preventDefault();
 
@@ -225,9 +238,7 @@ async function handleAuthSubmit(event, type) {
 
   const errorEl = document.getElementById(type === 'login' ? 'loginError' : 'signupError');
 
-  const BASE_URL = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "https://vaxcare-project.onrender.com";
+  const BASE_URL = "";
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -241,8 +252,8 @@ async function handleAuthSubmit(event, type) {
       localStorage.setItem('vaxUser', JSON.stringify(data.user || data));
       if (data.token) localStorage.setItem('vaxToken', data.token);
       window.location.href = role === 'hospital'
-        ? './hospital-admin-dashboard.html'
-        : './patient-dashboard.html';
+        ? '/src/pages/hospital-admin-dashboard.html'
+        : '/src/pages/patient-dashboard.html';
     } else {
       if (errorEl) {
         errorEl.innerText = data.message || data.error || 'Authentication failed';
