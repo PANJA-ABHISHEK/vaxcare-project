@@ -391,21 +391,19 @@ if (id === 'messages') loadHospitalMessages();
 }
 
 // ── Load Hospital Messages ──
-const AVATAR_COLORS = [
-  'linear-gradient(135deg,#0061a4,#0ea5e9)',
-  'linear-gradient(135deg,#7c3aed,#a78bfa)',
-  'linear-gradient(135deg,#059669,#34d399)',
-  'linear-gradient(135deg,#dc2626,#f87171)',
-  'linear-gradient(135deg,#d97706,#fbbf24)',
-  'linear-gradient(135deg,#0891b2,#22d3ee)',
-  'linear-gradient(135deg,#7c3aed,#ec4899)'
-];
 let cachedChatArray = [];
 
 function getAvatarColor(name) {
+  const colors = [
+    'linear-gradient(135deg,#0061a4,#0ea5e9)',
+    'linear-gradient(135deg,#0891b2,#22d3ee)',
+    'linear-gradient(135deg,#0369a1,#38bdf8)',
+    'linear-gradient(135deg,#0284c7,#7dd3fc)',
+    'linear-gradient(135deg,#075985,#0ea5e9)'
+  ];
   var hash = 0;
   for (var i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  return colors[Math.abs(hash) % colors.length];
 }
 
 function filterMessages() {
