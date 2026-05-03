@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && rm -rf ../public && mv dist ../public",
     "seed": "node backend/scripts/seed.js",
     "structure": "node scripts/show-structure.js"
   },
