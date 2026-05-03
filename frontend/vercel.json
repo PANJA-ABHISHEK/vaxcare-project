@@ -7,7 +7,6 @@
     { "source": "/hospitals(.*)", "destination": "https://vaxcare-project.onrender.com/hospitals$1" },
     { "source": "/profile(.*)", "destination": "https://vaxcare-project.onrender.com/profile$1" },
     { "source": "/notifications(.*)", "destination": "https://vaxcare-project.onrender.com/notifications$1" },
-    { "source": "/reminders(.*)", "destination": "https://vaxcare-project.onrender.com/reminders$1" },
-    { "source": "/(.*)", "destination": "/frontend/$1" }
+    { "source": "/reminders(.*)", "destination": "https://vaxcare-project.onrender.com/reminders$1" }
   ]
 }
