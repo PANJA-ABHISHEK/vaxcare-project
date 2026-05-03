@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "outputDirectory": "frontend/dist",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "rewrites": [
     { "source": "/login", "destination": "https://vaxcare-project.onrender.com/login" },
     { "source": "/signup", "destination": "https://vaxcare-project.onrender.com/signup" },
