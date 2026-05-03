@@ -53,4 +53,47 @@ const sendMessage = async (req, res) => {
   }
 };
 
-module.exports = { getMessages, sendMessage };
+// GET /messages/conversations/:userId — all unique chat partners
+const getConversations = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    // Find all messages where this user is sender or receiver
+    const messages = await Message.find({
+      $or: [{ senderId: userId }, { receiverId: userId }]
+    }).sort({ timestamp: -1 });
+
+    // Build a map of unique partner IDs → latest message
+    const partnerMap = new Map();
+    messages.forEach(m => {
+      const partnerId = m.senderId.toString() === userId ? m.receiverId.toString() : m.senderId.toString();
+      if (!partnerMap.has(partnerId)) {
+        partnerMap.set(partnerId, m);
+      }
+    });
+
+    // Populate partner details
+    const conversations = await Promise.all(
+      Array.from(partnerMap.entries()).map(async ([partnerId, lastMsg]) => {
+        const partner = await User.findById(partnerId, 'name role');
+        return {
+          partnerId,
+          partnerName: partner ? partner.name : 'Unknown',
+          lastMsg: lastMsg.message,
+          lastTime: new Date(lastMsg.timestamp).getTime(),
+          dateStr: (() => {
+            const d = new Date(lastMsg.timestamp);
+            return d.toDateString() === new Date().toDateString()
+              ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+          })()
+        };
+      })
+    );
+
+    res.status(200).json(conversations);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { getMessages, sendMessage, getConversations };

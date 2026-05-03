@@ -475,17 +475,42 @@ msgList.innerHTML = '<div style="text-align:center;padding:2.5rem;color:#94a3b8;
 var userStr = localStorage.getItem('vaxUser');
 if (!userStr) return;
 var user = JSON.parse(userStr);
+
 try {
-    var res = await fetch('/bookings');
-    var allBookings = await res.json();
-    var myBookings = allBookings.filter(function(a) { return a.vaccineId && a.vaccineId.hospitalName === user.name; });
-    
+    // ── Source 1: patients who have booked from this hospital ──
     var patientMap = new Map();
-    myBookings.forEach(function(b) {
-        if (b.userId && b.userId._id && !patientMap.has(b.userId._id)) {
-            patientMap.set(b.userId._id, { id: b.userId._id, name: b.userId.name || 'Patient', lastMsg: '', lastTime: 0, dateStr: '' });
+    try {
+        var res = await fetch('/bookings');
+        if (res.ok) {
+            var allBookings = await res.json();
+            allBookings
+                .filter(function(a) { return a.vaccineId && a.vaccineId.hospitalName === user.name; })
+                .forEach(function(b) {
+                    if (b.userId && b.userId._id && !patientMap.has(b.userId._id)) {
+                        patientMap.set(b.userId._id, { id: b.userId._id, name: b.userId.name || 'Patient', lastMsg: '', lastTime: 0, dateStr: '' });
+                    }
+                });
         }
-    });
+    } catch(e) { console.warn('Bookings fetch failed', e); }
+
+    // ── Source 2: patients who have actually messaged this hospital ──
+    try {
+        var convRes = await fetch('/messages/conversations/' + user._id);
+        if (convRes.ok) {
+            var convList = await convRes.json();
+            convList.forEach(function(c) {
+                if (!patientMap.has(c.partnerId)) {
+                    patientMap.set(c.partnerId, { id: c.partnerId, name: c.partnerName, lastMsg: c.lastMsg, lastTime: c.lastTime, dateStr: c.dateStr });
+                } else {
+                    // Update existing entry with real message data
+                    var existing = patientMap.get(c.partnerId);
+                    existing.lastMsg = c.lastMsg;
+                    existing.lastTime = c.lastTime;
+                    existing.dateStr = c.dateStr;
+                }
+            });
+        }
+    } catch(e) { console.warn('Conversations fetch failed', e); }
 
     if (patientMap.size === 0) {
         msgList.innerHTML = '<div style="text-align:center;padding:3.5rem 2rem;color:#94a3b8;border:2px dashed #e2e8f0;border-radius:1rem;background:#fafbfc;">' +
@@ -496,28 +521,29 @@ try {
         return;
     }
 
+    // For booked patients without messages, fetch their last message
     for (var entry of patientMap.entries()) {
         var patientId = entry[0];
         var patData = entry[1];
-        var sortedIds = [user._id, patientId].sort();
-        var conversationId = sortedIds[0] + '_' + sortedIds[1];
-        try {
-            var msgRes = await fetch('/messages/' + conversationId);
-            if (msgRes.ok) {
-                var msgs = await msgRes.json();
-                if (msgs.length > 0) {
-                    var last = msgs[msgs.length - 1];
-                    patData.lastMsg = last.message;
-                    patData.lastTime = new Date(last.timestamp).getTime();
-                    var d = new Date(last.timestamp);
-                    if (d.toDateString() === new Date().toDateString()) {
-                        patData.dateStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    } else {
-                        patData.dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
+        if (patData.lastTime === 0) {
+            var sortedIds = [user._id, patientId].sort();
+            var conversationId = sortedIds[0] + '_' + sortedIds[1];
+            try {
+                var msgRes = await fetch('/messages/' + conversationId);
+                if (msgRes.ok) {
+                    var msgs = await msgRes.json();
+                    if (msgs.length > 0) {
+                        var last = msgs[msgs.length - 1];
+                        patData.lastMsg = last.message;
+                        patData.lastTime = new Date(last.timestamp).getTime();
+                        var d = new Date(last.timestamp);
+                        patData.dateStr = d.toDateString() === new Date().toDateString()
+                            ? d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                            : d.toLocaleDateString([], {month: 'short', day: 'numeric'});
                     }
                 }
-            }
-        } catch(e) {}
+            } catch(e) {}
+        }
     }
 
     cachedChatArray = Array.from(patientMap.values()).sort(function(a, b) { return b.lastTime - a.lastTime; });
