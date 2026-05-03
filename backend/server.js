@@ -94,3 +94,14 @@ server.listen(PORT, () => {
   console.log(`  GET    http://localhost:${PORT}/bookings`);
   console.log(`  GET    http://localhost:${PORT}/hospitals`);
 });
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use.`);
+    console.error(`   Run this command to free it, then retry:\n`);
+    console.error(`   npx kill-port ${PORT}\n`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
+});
