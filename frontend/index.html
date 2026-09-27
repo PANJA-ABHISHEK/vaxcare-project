@@ -14,7 +14,7 @@
 
   <!-- Navbar -->
   <nav class="navbar">
-    <div class="logo">VaxCare</div>
+    <div class="logo"><img src="images/logo.png" alt="VaxCare" style="height: 60px; vertical-align: middle;"></div>
     <div class="nav-links">
       <button class="btn btn-light btn-sm" onclick="openLoginModal()">Login</button>
       <button class="btn btn-blue btn-sm" onclick="openSignupModal()">Sign Up</button>
@@ -202,7 +202,7 @@
   <footer class="site-foot">
     <div class="foot-grid">
       <div class="foot-brand">
-        <span class="logo">VaxCare</span>
+        <span class="logo"><img src="images/logo.png" alt="VaxCare" style="height: 60px; vertical-align: middle;"></span>
         <p>India's trusted vaccination booking platform. Making immunisation accessible, easy, and safe for everyone.</p>
       </div>
       <div class="foot-col">
@@ -438,5 +438,28 @@
     }
   }
 </script>
-</body>
+
+<!-- Scroll Reveal Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting) {
+        entry.target.classList.add('reveal-active');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  const elementsToReveal = document.querySelectorAll('.feature, .how-step, .trust-card, .stats-bar-card, .section-head, .hero > *');
+  elementsToReveal.forEach((el, index) => {
+    el.classList.add('reveal');
+    // Add staggered delay for child elements like features
+    if (el.classList.contains('feature') || el.classList.contains('how-step') || el.classList.contains('trust-card')) {
+      el.style.transitionDelay = (index % 4) * 0.1 + 's';
+    }
+    observer.observe(el);
+  });
+});
+</script>
+\n</body>
 </html>
